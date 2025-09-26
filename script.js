@@ -212,20 +212,18 @@
   }
 
   function transformToDynamics(rows) {
+    // Build Dynamics weekly format with two rows: work and lunch
     const dateKey = state.mapping.date;
     const startKey = state.mapping.startTime;
     const endKey = state.mapping.endTime;
     const hoursKey = state.mapping.hours;
-    const employeeKey = state.mapping.employee;
-    const projectKey = state.mapping.project;
-    const activityKey = state.mapping.activity;
 
-    const grouped = new Map();
+    const weekStart = dayjs(state.weekStartIso);
+    const totalsByDay = new Array(7).fill(0);
+
     for (const { row, date } of rows) {
-      const dateStr = date.format('YYYY-MM-DD');
-      const employee = employeeKey ? String(row[employeeKey] || '') : '';
-      const project = projectKey ? String(row[projectKey] || '') : '';
-      const activity = activityKey ? String(row[activityKey] || '') : '';
+      // Determine index 0..6 where 0 is Monday (weekStart)
+      const dayIndex = Math.max(0, Math.min(6, date.diff(weekStart, 'day')));
 
       let hours = 0;
       if (hoursKey && row[hoursKey] !== undefined && row[hoursKey] !== '') {
@@ -234,21 +232,61 @@
       } else if (startKey && endKey) {
         hours = parseHoursFromTimes(String(row[startKey]), String(row[endKey]));
       }
-
-      const key = JSON.stringify([dateStr, employee, project, activity]);
-      const prev = grouped.get(key) || { date: dateStr, employee, project, activity, hours: 0 };
-      prev.hours += hours;
-      grouped.set(key, prev);
+      if (Number.isFinite(hours) && hours > 0) {
+        totalsByDay[dayIndex] += hours;
+      }
     }
 
-    // Build Dynamics import shape (example minimal): Date, Employee, Project, Activity, Hours
-    return Array.from(grouped.values()).map((g) => ({
-      Date: g.date,
-      Employee: g.employee,
-      Project: g.project,
-      Activity: g.activity,
-      Hours: Number(g.hours.toFixed(2)),
-    }));
+    // Normalize to up to 2 decimals
+    const normalize = (n) => Number(n.toFixed(2));
+    for (let i = 0; i < 7; i++) {
+      totalsByDay[i] = totalsByDay[i] > 0 ? normalize(totalsByDay[i]) : 0;
+    }
+
+    const HOURS_COLS = ['HOURS', 'Hours2_', 'Hours3_', 'Hours4_', 'Hours5_', 'Hours6_', 'Hours7_'];
+    const COMMENT_COLS = ['EXTERNALCOMMENTS', 'ExternalComments2_', 'ExternalComments3_', 'ExternalComments4_', 'ExternalComments5_', 'ExternalComments6_', 'ExternalComments7_'];
+
+    const BASE_META = {
+      ProjectDataAreaId: '110',
+      ProjId: '11011127',
+    };
+
+    // Row 1: Work time
+    const row1 = {
+      LineNum: '1.0000000000000000',
+      ...BASE_META,
+      ACTIVITYNUMBER: 'A110015929',
+    };
+    // Initialize all day columns as empty strings to keep column order consistent
+    for (let i = 0; i < 7; i++) {
+      row1[HOURS_COLS[i]] = '';
+      row1[COMMENT_COLS[i]] = '';
+    }
+    for (let i = 0; i < 7; i++) {
+      if (totalsByDay[i] > 0) {
+        row1[HOURS_COLS[i]] = normalize(totalsByDay[i]);
+        row1[COMMENT_COLS[i]] = 'Development';
+      }
+    }
+
+    // Row 2: Lunch 0.5 if any work that day
+    const row2 = {
+      LineNum: '2.0000000000000000',
+      ...BASE_META,
+      ACTIVITYNUMBER: 'A110015932',
+    };
+    for (let i = 0; i < 7; i++) {
+      row2[HOURS_COLS[i]] = '';
+      row2[COMMENT_COLS[i]] = '';
+    }
+    for (let i = 0; i < 7; i++) {
+      if (totalsByDay[i] > 0) {
+        row2[HOURS_COLS[i]] = 0.5;
+        row2[COMMENT_COLS[i]] = 'Lunsj';
+      }
+    }
+
+    return [row1, row2];
   }
 
   function renderPreview(rows) {
