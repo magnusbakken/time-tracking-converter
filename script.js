@@ -27,6 +27,20 @@
     ...COMMENT_COLS,
   ];
 
+  // Initialize calendar widget with Monday as first day of week
+  let weekPicker = null;
+  if (window.flatpickr) {
+    weekPicker = window.flatpickr(weekStartInput, {
+      dateFormat: 'Y-m-d',
+      allowInput: true,
+      disableMobile: true,
+      locale: { firstDayOfWeek: 1 },
+      onChange: (_selectedDates, dateStr) => {
+        if (dateStr) setWeekStartFromDate(dateStr);
+      },
+    });
+  }
+
   function setWeekStartFromDate(date) {
     // Force Monday as start of week using ISO week handling
     const d = dayjs(date);
@@ -34,6 +48,7 @@
     const monday = d.isoWeekday() === 1 ? d : d.isoWeekday(1);
     weekStartInput.value = monday.format('YYYY-MM-DD');
     state.weekStartIso = weekStartInput.value;
+    if (weekPicker) weekPicker.setDate(state.weekStartIso, false);
   }
 
   // No manual mapping needed; fixed columns are used
