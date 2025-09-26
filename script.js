@@ -1,7 +1,6 @@
 (() => {
   const fileInput = document.getElementById('fileInput');
   const fileMetaEl = document.getElementById('fileMeta');
-  const mappingControlsEl = document.getElementById('mappingControls');
   const weekStartInput = document.getElementById('weekStart');
   const btnAutofillWeek = document.getElementById('btnAutofillWeek');
   const btnTransform = document.getElementById('btnTransform');
@@ -14,17 +13,7 @@
    */
   const state = {
     workbook: null,
-    rawRows: [], // parsed from first sheet
-    headers: [],
-    mapping: {
-      date: '',        // Workforce date column name
-      startTime: '',   // Workforce start time
-      endTime: '',     // Workforce end time
-      employee: '',    // Optional: employee name/id
-      project: '',     // Optional: project/task
-      activity: '',    // Optional: activity/description
-      hours: '',       // Optional: if file already provides durations
-    },
+    rawRows: [], // Parsed from fixed columns: I (date), N (start), T (end)
     weekStartIso: null, // yyyy-mm-dd string (Mon)
     transformedRows: [],
   };
@@ -38,76 +27,7 @@
     state.weekStartIso = weekStartInput.value;
   }
 
-  function detectLikelyHeaders(headers) {
-    // Heuristics for Workforce column names
-    const lower = headers.map(h => (h || '').toString());
-    function find(keys) {
-      const lc = lower.map(h => h.toLowerCase().trim());
-      for (const key of keys) {
-        const idx = lc.findIndex(h => h === key || h.includes(key));
-        if (idx >= 0) return headers[idx];
-      }
-      return '';
-    }
-    return {
-      // Include Norwegian Workforce export headers
-      date: find(['date', 'work date', 'day', 'arbeidsdato']),
-      startTime: find(['start', 'from', 'start time', 'inntid', 'inn', 'fra']),
-      endTime: find(['end', 'to', 'end time', 'ut-tid', 'uttid', 'ut', 'til']),
-      employee: find(['employee', 'user', 'name']),
-      project: find(['project', 'job', 'client', 'customer']),
-      activity: find(['activity', 'task', 'description', 'work type']),
-      hours: find(['hours', 'duration']),
-    };
-  }
-
-  function renderMappingControls() {
-    if (!state.headers.length) {
-      mappingControlsEl.innerHTML = '<p class="muted">Upload a file to configure mapping.</p>';
-      return;
-    }
-    const fields = [
-      { key: 'date', label: 'Date column (required)' },
-      { key: 'startTime', label: 'Start time column' },
-      { key: 'endTime', label: 'End time column' },
-      { key: 'hours', label: 'Duration hours column (if present)' },
-      { key: 'employee', label: 'Employee column (optional)' },
-      { key: 'project', label: 'Project column (optional)' },
-      { key: 'activity', label: 'Activity/Description column (optional)' },
-    ];
-
-    const options = ['<option value="">— Not used —</option>']
-      .concat(state.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`))
-      .join('');
-
-    mappingControlsEl.innerHTML = `
-      <div class="mapping-grid">
-        ${fields.map(f => `
-          <div class="mapping-row">
-            <label for="map-${f.key}">${f.label}</label>
-            <select id="map-${f.key}">${options}</select>
-          </div>`).join('')}
-      </div>
-    `;
-
-    // Prefill with detections
-    const detected = detectLikelyHeaders(state.headers);
-    for (const [k, v] of Object.entries(detected)) {
-      const sel = document.getElementById(`map-${k}`);
-      if (sel && v) sel.value = v;
-      state.mapping[k] = sel ? sel.value : '';
-      sel?.addEventListener('change', () => {
-        state.mapping[k] = sel.value;
-        validateReadyToTransform();
-      });
-    }
-    validateReadyToTransform();
-  }
-
-  function validateReadyToTransform() {
-    const hasDate = !!state.mapping.date;
-    btnTransform.disabled = !(hasDate && state.rawRows.length);
-  }
+  // No manual mapping needed; fixed columns are used
 
   function escapeHtml(s) {
     return String(s)
@@ -119,7 +39,17 @@
   }
 
   function parseTimeToMinutes(value) {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number') {
+      const parsed = XLSX.SSF.parse_date_code(value);
+      if (parsed && Number.isFinite(parsed.H) && Number.isFinite(parsed.M)) {
+        return parsed.H * 60 + parsed.M;
+      }
+      if (value >= 0 && value <= 1) {
+        return Math.round(value * 1440);
+      }
+      return null;
+    }
     const raw = String(value).trim();
     if (!raw) return null;
     const normalized = raw.replace(',', '.');
@@ -147,14 +77,33 @@
     const wb = XLSX.read(buffer, { type: 'array' });
     const firstSheetName = wb.SheetNames[0];
     const ws = wb.Sheets[firstSheetName];
-    const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
-    const headers = Object.keys(json[0] || {});
+
+    // Fixed columns: I (8), N (13), T (19). Data starts at row 13 (index 12).
+    const ref = ws['!ref'] || 'A1:A1';
+    const range = XLSX.utils.decode_range(ref);
+    const startRow = Math.max(12, range.s.r); // 0-based index for row 13
+    const COL_I = 8;  // Arbeidsdato
+    const COL_N = 13; // Inntid
+    const COL_T = 19; // Ut-tid
+    const rows = [];
+    for (let r = startRow; r <= range.e.r; r++) {
+      const dCell = ws[XLSX.utils.encode_cell({ r, c: COL_I })];
+      const sCell = ws[XLSX.utils.encode_cell({ r, c: COL_N })];
+      const eCell = ws[XLSX.utils.encode_cell({ r, c: COL_T })];
+      const dVal = dCell ? dCell.v : '';
+      const sVal = sCell ? sCell.v : '';
+      const eVal = eCell ? eCell.v : '';
+      const isAllEmpty = (dVal === '' || dVal === null || dVal === undefined)
+        && (sVal === '' || sVal === null || sVal === undefined)
+        && (eVal === '' || eVal === null || eVal === undefined);
+      if (isAllEmpty) continue; // Skip empty rows but do not stop scanning
+      rows.push({ date: dVal, startTime: sVal, endTime: eVal });
+    }
 
     state.workbook = wb;
-    state.rawRows = json;
-    state.headers = headers;
-    fileMetaEl.textContent = `${file.name} • ${firstSheetName} • ${json.length} rows`;
-    renderMappingControls();
+    state.rawRows = rows;
+    fileMetaEl.textContent = `${file.name} • ${firstSheetName} • ${rows.length} rows`;
+    btnTransform.disabled = !(state.rawRows.length);
   }
 
   function parseHoursFromTimes(startStr, endStr) {
@@ -204,20 +153,14 @@
     if (!weekStartIso) return [];
     const start = dayjs(weekStartIso);
     const end = start.add(7, 'day');
-    const dateKey = state.mapping.date;
     return rows.map(r => {
-      const d = parseDateCell(r[dateKey]);
+      const d = parseDateCell(r.date);
       return d ? { row: r, date: d } : null;
     }).filter(Boolean).filter(({ date }) => date.isSame(start) || (date.isAfter(start) && date.isBefore(end)));
   }
 
   function transformToDynamics(rows) {
     // Build Dynamics weekly format with two rows: work and lunch
-    const dateKey = state.mapping.date;
-    const startKey = state.mapping.startTime;
-    const endKey = state.mapping.endTime;
-    const hoursKey = state.mapping.hours;
-
     const weekStart = dayjs(state.weekStartIso);
     const totalsByDay = new Array(7).fill(0);
 
@@ -226,12 +169,7 @@
       const dayIndex = Math.max(0, Math.min(6, date.diff(weekStart, 'day')));
 
       let hours = 0;
-      if (hoursKey && row[hoursKey] !== undefined && row[hoursKey] !== '') {
-        const parsed = parseFloat(String(row[hoursKey]).replace(',', '.'));
-        hours = Number.isFinite(parsed) ? parsed : 0;
-      } else if (startKey && endKey) {
-        hours = parseHoursFromTimes(String(row[startKey]), String(row[endKey]));
-      }
+      hours = parseHoursFromTimes(row.startTime, row.endTime);
       if (Number.isFinite(hours) && hours > 0) {
         totalsByDay[dayIndex] += hours;
       }
@@ -335,8 +273,7 @@
     if (!file) return;
     await readFile(file);
     // Try to infer week from min date
-    const dateKey = state.mapping.date || detectLikelyHeaders(state.headers).date;
-    const dates = state.rawRows.map(r => parseDateCell(r[dateKey])).filter(Boolean);
+    const dates = state.rawRows.map(r => parseDateCell(r.date)).filter(Boolean);
     if (dates.length) {
       const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b));
       setWeekStartFromDate(min.format('YYYY-MM-DD'));
@@ -346,8 +283,7 @@
   btnAutofillWeek.addEventListener('click', (e) => {
     e.preventDefault();
     if (!state.rawRows.length) return;
-    const dateKey = state.mapping.date || detectLikelyHeaders(state.headers).date;
-    const dates = state.rawRows.map(r => parseDateCell(r[dateKey])).filter(Boolean);
+    const dates = state.rawRows.map(r => parseDateCell(r.date)).filter(Boolean);
     if (!dates.length) return;
     const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b));
     setWeekStartFromDate(min.format('YYYY-MM-DD'));
