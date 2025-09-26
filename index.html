@@ -9,7 +9,7 @@
   <body>
     <header class="container">
       <h1>Workforce ➜ Dynamics Time Import</h1>
-      <p class="subtitle">Upload Workforce export, map columns, select week, transform, and export for Dynamics.</p>
+      <p class="subtitle">Upload Workforce export, select week, transform, and export for Dynamics.</p>
     </header>
 
     <main class="container">
@@ -19,13 +19,8 @@
         <div id="fileMeta" class="muted"></div>
       </section>
 
-      <section class="card" id="mapping-section">
-        <h2>2) Map Columns</h2>
-        <div id="mappingControls"></div>
-      </section>
-
       <section class="card" id="week-section">
-        <h2>3) Select Week</h2>
+        <h2>2) Select Week</h2>
         <div class="week-row">
           <label for="weekStart">Week starting (Mon):</label>
           <input type="date" id="weekStart" />
@@ -34,12 +29,12 @@
       </section>
 
       <section class="card" id="transform-section">
-        <h2>4) Transform</h2>
+        <h2>3) Transform</h2>
         <button id="btnTransform" disabled>Transform to Dynamics format</button>
       </section>
 
       <section class="card" id="preview-section">
-        <h2>5) Preview & Export</h2>
+        <h2>4) Preview & Export</h2>
         <div class="table-scroll">
           <table id="previewTable"></table>
         </div>
