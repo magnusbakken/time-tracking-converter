@@ -18,6 +18,15 @@
     transformedRows: [],
   };
 
+  // Dynamics column definitions and explicit header order
+  const HOURS_COLS = ['HOURS', 'Hours2_', 'Hours3_', 'Hours4_', 'Hours5_', 'Hours6_', 'Hours7_'];
+  const COMMENT_COLS = ['EXTERNALCOMMENTS', 'ExternalComments2_', 'ExternalComments3_', 'ExternalComments4_', 'ExternalComments5_', 'ExternalComments6_', 'ExternalComments7_'];
+  const DYNAMICS_HEADERS = [
+    'LineNum', 'ProjectDataAreaId', 'ProjId', 'ACTIVITYNUMBER',
+    ...HOURS_COLS,
+    ...COMMENT_COLS,
+  ];
+
   function setWeekStartFromDate(date) {
     // Force Monday as start of week using ISO week handling
     const d = dayjs(date);
@@ -181,9 +190,6 @@
       totalsByDay[i] = totalsByDay[i] > 0 ? normalize(totalsByDay[i]) : 0;
     }
 
-    const HOURS_COLS = ['HOURS', 'Hours2_', 'Hours3_', 'Hours4_', 'Hours5_', 'Hours6_', 'Hours7_'];
-    const COMMENT_COLS = ['EXTERNALCOMMENTS', 'ExternalComments2_', 'ExternalComments3_', 'ExternalComments4_', 'ExternalComments5_', 'ExternalComments6_', 'ExternalComments7_'];
-
     const BASE_META = {
       ProjectDataAreaId: '110',
       ProjId: '11011127',
@@ -195,9 +201,11 @@
       ...BASE_META,
       ACTIVITYNUMBER: 'A110015929',
     };
-    // Initialize all day columns as empty strings to keep column order consistent
+    // Initialize day columns with grouped order (all HOURS, then COMMENTS)
     for (let i = 0; i < 7; i++) {
       row1[HOURS_COLS[i]] = '';
+    }
+    for (let i = 0; i < 7; i++) {
       row1[COMMENT_COLS[i]] = '';
     }
     for (let i = 0; i < 7; i++) {
@@ -215,6 +223,8 @@
     };
     for (let i = 0; i < 7; i++) {
       row2[HOURS_COLS[i]] = '';
+    }
+    for (let i = 0; i < 7; i++) {
       row2[COMMENT_COLS[i]] = '';
     }
     for (let i = 0; i < 7; i++) {
@@ -234,7 +244,7 @@
       btnDownloadXlsx.disabled = true;
       return;
     }
-    const headers = Object.keys(rows[0]);
+    const headers = DYNAMICS_HEADERS.filter(h => h in rows[0]);
     const thead = '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
     const tbody = '<tbody>' + rows.map(r => '<tr>' + headers.map(h => `<td>${escapeHtml(r[h])}</td>`).join('') + '</tr>').join('') + '</tbody>';
     previewTable.innerHTML = thead + tbody;
@@ -243,13 +253,13 @@
   }
 
   function exportCsv(rows) {
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const ws = XLSX.utils.json_to_sheet(rows, { header: DYNAMICS_HEADERS });
     const csv = XLSX.utils.sheet_to_csv(ws);
     downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'dynamics_import.csv');
   }
 
   function exportXlsx(rows) {
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const ws = XLSX.utils.json_to_sheet(rows, { header: DYNAMICS_HEADERS });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Import');
     const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
