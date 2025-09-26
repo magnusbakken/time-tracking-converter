@@ -50,9 +50,10 @@
       return '';
     }
     return {
-      date: find(['date', 'work date', 'day']),
-      startTime: find(['start', 'from', 'start time']),
-      endTime: find(['end', 'to', 'end time']),
+      // Include Norwegian Workforce export headers
+      date: find(['date', 'work date', 'day', 'arbeidsdato']),
+      startTime: find(['start', 'from', 'start time', 'inntid', 'inn', 'fra']),
+      endTime: find(['end', 'to', 'end time', 'ut-tid', 'uttid', 'ut', 'til']),
       employee: find(['employee', 'user', 'name']),
       project: find(['project', 'job', 'client', 'customer']),
       activity: find(['activity', 'task', 'description', 'work type']),
@@ -117,6 +118,30 @@
       .replaceAll("'", '&#039;');
   }
 
+  function parseTimeToMinutes(value) {
+    if (value === null || value === undefined) return null;
+    const raw = String(value).trim();
+    if (!raw) return null;
+    const normalized = raw.replace(',', '.');
+    // Match HH.MM or HH:MM
+    let m = normalized.match(/^\s*(\d{1,2})[\.:](\d{2})\s*$/);
+    let hours, minutes;
+    if (m) {
+      hours = parseInt(m[1], 10);
+      minutes = parseInt(m[2], 10);
+    } else {
+      // Fallback: just HH
+      m = normalized.match(/^\s*(\d{1,2})\s*$/);
+      if (!m) return null;
+      hours = parseInt(m[1], 10);
+      minutes = 0;
+    }
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+    if (hours < 0 || hours > 23) return null;
+    if (minutes < 0 || minutes > 59) return null;
+    return hours * 60 + minutes;
+  }
+
   async function readFile(file) {
     const buffer = await file.arrayBuffer();
     const wb = XLSX.read(buffer, { type: 'array' });
@@ -133,25 +158,43 @@
   }
 
   function parseHoursFromTimes(startStr, endStr) {
-    if (!startStr || !endStr) return 0;
-    const base = '1970-01-01';
-    const s = dayjs(`${base} ${startStr}`);
-    let e = dayjs(`${base} ${endStr}`);
-    if (!s.isValid() || !e.isValid()) return 0;
-    // Handle overnight spans (end past midnight)
-    if (e.isBefore(s)) e = e.add(1, 'day');
-    const diffHours = e.diff(s, 'minute') / 60;
-    return Math.max(0, diffHours);
+    const startMin = parseTimeToMinutes(startStr);
+    const endMin = parseTimeToMinutes(endStr);
+    if (startMin === null || endMin === null) return 0;
+    let diff = endMin - startMin;
+    if (diff < 0) diff += 24 * 60; // overnight shift
+    return Math.max(0, diff / 60);
   }
 
   function parseDateCell(value) {
-    // Allow excel date objects, ISO strings, or dd/mm/yyyy etc via dayjs auto parse
+    // Handle Excel serial, Norwegian DD.MM.YY or DD.MM.YYYY, or generic parse
     if (typeof value === 'number') {
-      // Excel date serial to JS date
       const jsDate = XLSX.SSF.parse_date_code(value);
       if (!jsDate) return null;
       const d = dayjs(new Date(jsDate.y, jsDate.m - 1, jsDate.d));
       return d.isValid() ? d : null;
+    }
+    if (typeof value === 'string') {
+      const s = value.trim();
+      const m = s.match(/^\s*(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})\s*$/);
+      if (m) {
+        const day = parseInt(m[1], 10);
+        const month = parseInt(m[2], 10);
+        let year = parseInt(m[3], 10);
+        if (m[3].length === 2) year = 2000 + year; // Assume 2000-2099 for two-digit year
+
+        // Validate explicit day/month ranges to avoid Date rollover (e.g., 32.01 -> 01 Feb)
+        if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
+        if (month < 1 || month > 12) return null;
+        if (day < 1) return null;
+        const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const monthLengths = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const maxDay = monthLengths[month - 1];
+        if (day > maxDay) return null;
+
+        const d = dayjs(new Date(year, month - 1, day));
+        return d.isValid() ? d : null;
+      }
     }
     const d = dayjs(value);
     return d.isValid() ? d : null;
