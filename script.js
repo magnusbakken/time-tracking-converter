@@ -300,7 +300,12 @@
   });
 
   weekStartInput.addEventListener('change', () => {
-    state.weekStartIso = weekStartInput.value || null;
+    // Normalize any picked date to Monday to avoid off-by-one day shifts
+    if (weekStartInput.value) {
+      setWeekStartFromDate(weekStartInput.value);
+    } else {
+      state.weekStartIso = null;
+    }
   });
 
   btnTransform.addEventListener('click', () => {
