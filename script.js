@@ -182,6 +182,16 @@
         const month = parseInt(m[2], 10);
         let year = parseInt(m[3], 10);
         if (m[3].length === 2) year = 2000 + year; // Assume 2000-2099 for two-digit year
+
+        // Validate explicit day/month ranges to avoid Date rollover (e.g., 32.01 -> 01 Feb)
+        if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
+        if (month < 1 || month > 12) return null;
+        if (day < 1) return null;
+        const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const monthLengths = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const maxDay = monthLengths[month - 1];
+        if (day > maxDay) return null;
+
         const d = dayjs(new Date(year, month - 1, day));
         return d.isValid() ? d : null;
       }
