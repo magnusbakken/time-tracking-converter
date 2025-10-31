@@ -37,6 +37,13 @@
   }
 }
 
+/* File input button styling */
+input[type='file']::file-selector-button {
+  @apply bg-blue-500 text-white border-none rounded-md px-4 py-2 mr-3 cursor-pointer;
+  @apply hover:bg-blue-600;
+  @apply transition-colors duration-200;
+}
+
 /* React DatePicker custom styling for dark theme */
 .react-datepicker-wrapper {
   @apply w-auto;
