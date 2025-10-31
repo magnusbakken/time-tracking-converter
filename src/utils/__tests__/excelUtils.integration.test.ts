@@ -1,17 +1,17 @@
 /**
  * Integration tests for Excel import/export functionality
- * 
+ *
  * These tests verify the complete workflow from Workforce import to Dynamics export:
  * 1. Read Workforce file using excelUtils.readFile()
  * 2. Filter rows for a specific week using dateUtils.filterRowsToWeek()
  * 3. Transform to Dynamics format using transformUtils.transformToDynamics()
  * 4. Export to XLSX using excelUtils.exportXlsx()
- * 
- * IMPORTANT: These tests use ONLY the public API functions from excelUtils, dateUtils,
- * and transformUtils. There is NO direct reference to the XLSX library. This means when
- * we replace the XLSX library, these tests will continue to work without any modification,
- * verifying that the behavior remains the same.
- * 
+ *
+ * IMPORTANT: These tests have ZERO dependency on the XLSX library. They use only the
+ * public API functions from the application. When we replace the XLSX library, these
+ * tests will continue to work without any modification, verifying that the behavior
+ * remains the same.
+ *
  * The tests compare the actual output with expected output by doing a binary comparison
  * of the generated files.
  */
@@ -100,15 +100,12 @@ describe('Excel Import/Export Integration Tests', () => {
 
   if (testCases.length === 0) {
     it.skip('No test cases found in fixtures directory', () => {
-      console.log(`
-No test cases found. To add test cases:
-1. Create a directory in ${FIXTURES_DIR}
-2. Add workforce-input.xlsx (or .xls)
-3. Add expected-output.xlsx
-4. Add config.json with the week start date
-
-See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
-      `);
+      // No test cases found. To add test cases:
+      // 1. Create a directory in the fixtures folder
+      // 2. Add workforce-input.xlsx (or .xls)
+      // 3. Add expected-output.xlsx
+      // 4. Add config.json with the week start date
+      // See fixtures/README.md for more details.
     });
   }
 
@@ -120,8 +117,10 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
       // Find input file (try both .xlsx and .xls)
       const inputFiles = fs
         .readdirSync(testCaseDir)
-        .filter((f) => f.startsWith('workforce-input') && (f.endsWith('.xlsx') || f.endsWith('.xls')));
-      
+        .filter(
+          (f) => f.startsWith('workforce-input') && (f.endsWith('.xlsx') || f.endsWith('.xls'))
+        );
+
       const inputFile = inputFiles[0];
       const inputPath = inputFile ? path.join(testCaseDir, inputFile) : null;
 
@@ -129,38 +128,44 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
 
       it('should have all required files', () => {
         expect(fs.existsSync(configPath), `Missing config.json in ${testCaseName}`).toBe(true);
-        expect(inputPath && fs.existsSync(inputPath), `Missing workforce-input file in ${testCaseName}`).toBe(true);
-        expect(fs.existsSync(expectedPath), `Missing expected-output.xlsx in ${testCaseName}`).toBe(true);
+        expect(
+          inputPath && fs.existsSync(inputPath),
+          `Missing workforce-input file in ${testCaseName}`
+        ).toBe(true);
+        expect(fs.existsSync(expectedPath), `Missing expected-output.xlsx in ${testCaseName}`).toBe(
+          true
+        );
       });
 
-      if (!inputPath || !fs.existsSync(configPath) || !fs.existsSync(inputPath) || !fs.existsSync(expectedPath)) {
+      if (
+        !inputPath ||
+        !fs.existsSync(configPath) ||
+        !fs.existsSync(inputPath) ||
+        !fs.existsSync(expectedPath)
+      ) {
         return; // Skip further tests if files are missing
       }
 
       it('should transform Workforce input to match expected Dynamics output', async () => {
         // Read config
         const configContent = fs.readFileSync(configPath, 'utf-8');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const config: TestConfig = JSON.parse(configContent);
 
-        if (config.description) {
-          console.log(`  Description: ${config.description}`);
-        }
-
-        // Dynamic import of the Excel library (currently 'xlsx', but could be replaced)
-        // This avoids a static import at the module level
-        const XLSX = await import('xlsx');
-
         // Step 1: Read Workforce input file using excelUtils.readFile()
+        // All date/time parsing happens inside readFile()
         const inputFile = createFileFromPath(inputPath);
-        const { rawRows } = await readFile(inputFile);
-        expect(rawRows.length).toBeGreaterThan(0);
+        const { rows } = await readFile(inputFile);
+        expect(rows.length).toBeGreaterThan(0);
 
         // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek()
-        const filteredRows = filterRowsToWeek(rawRows, config.weekStartIso, XLSX);
+        // No XLSX dependency - dates are already parsed as Date objects
+        const filteredRows = filterRowsToWeek(rows, config.weekStartIso);
         expect(filteredRows.length).toBeGreaterThan(0);
 
         // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics()
-        const dynamicsRows = transformToDynamics(filteredRows, config.weekStartIso, XLSX);
+        // No XLSX dependency - times are already parsed as numbers (minutes since midnight)
+        const dynamicsRows = transformToDynamics(filteredRows, config.weekStartIso);
         expect(dynamicsRows.length).toBe(2); // Should have work + lunch rows
 
         // Step 4: Export to XLSX blob using excelUtils.exportXlsx()
@@ -175,12 +180,9 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
 
         // Step 7: Compare the files byte-by-byte
         const comparison = compareFiles(expectedBuffer, actualBuffer);
-        
-        if (!comparison.match) {
-          console.log(`\n  ${comparison.message}`);
-          console.log(`  Expected file: ${expectedPath}`);
-          console.log(`  To inspect the actual output, you can save it for manual comparison.`);
-        }
+
+        // If comparison fails, the expect below will show the message
+        // (console statements are disabled in tests for cleaner output)
 
         expect(comparison.match, comparison.message).toBe(true);
       });

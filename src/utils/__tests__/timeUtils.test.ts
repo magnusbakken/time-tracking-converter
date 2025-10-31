@@ -1,94 +1,57 @@
 import { describe, it, expect } from 'vitest';
-import { parseTimeToMinutes, parseHoursFromTimes } from '../timeUtils';
+import { calculateHours } from '../timeUtils';
 
-// Mock XLSX for testing
-const mockXLSX = {
-  SSF: {
-    parse_date_code: (value: number) => {
-      // Simulate Excel time serial (0.5 = 12:00, 0.375 = 09:00, etc.)
-      if (value >= 0 && value <= 1) {
-        const totalMinutes = Math.round(value * 1440);
-        return {
-          H: Math.floor(totalMinutes / 60),
-          M: totalMinutes % 60,
-        };
-      }
-      return null;
-    },
-  },
-};
-
+/**
+ * Test calculateHours function which works with already-parsed time values.
+ * Time parsing is now done in excelUtils.readFile(), so this only tests calculation.
+ */
 describe('timeUtils', () => {
-  describe('parseTimeToMinutes', () => {
-    it('should return null for empty values', () => {
-      expect(parseTimeToMinutes(null, mockXLSX)).toBeNull();
-      expect(parseTimeToMinutes(undefined, mockXLSX)).toBeNull();
-      expect(parseTimeToMinutes('', mockXLSX)).toBeNull();
+  describe('calculateHours', () => {
+    it('should return 0 for null start time', () => {
+      expect(calculateHours(null, 1020)).toBe(0);
     });
 
-    it('should parse HH:MM format', () => {
-      expect(parseTimeToMinutes('09:00', mockXLSX)).toBe(540);
-      expect(parseTimeToMinutes('17:30', mockXLSX)).toBe(1050);
-      expect(parseTimeToMinutes('00:00', mockXLSX)).toBe(0);
-      expect(parseTimeToMinutes('23:59', mockXLSX)).toBe(1439);
+    it('should return 0 for null end time', () => {
+      expect(calculateHours(540, null)).toBe(0);
     });
 
-    it('should parse HH.MM format', () => {
-      expect(parseTimeToMinutes('09.00', mockXLSX)).toBe(540);
-      expect(parseTimeToMinutes('17.30', mockXLSX)).toBe(1050);
+    it('should return 0 for both null', () => {
+      expect(calculateHours(null, null)).toBe(0);
     });
 
-    it('should parse HH format (no minutes)', () => {
-      expect(parseTimeToMinutes('9', mockXLSX)).toBe(540);
-      expect(parseTimeToMinutes('17', mockXLSX)).toBe(1020);
-    });
-
-    it('should handle comma as decimal separator', () => {
-      expect(parseTimeToMinutes('09,00', mockXLSX)).toBe(540);
-      expect(parseTimeToMinutes('17,30', mockXLSX)).toBe(1050);
-    });
-
-    it('should parse Excel serial number format', () => {
-      expect(parseTimeToMinutes(0.375, mockXLSX)).toBe(540); // 09:00
-      expect(parseTimeToMinutes(0.5, mockXLSX)).toBe(720); // 12:00
-    });
-
-    it('should return null for invalid times', () => {
-      expect(parseTimeToMinutes('25:00', mockXLSX)).toBeNull(); // Invalid hour
-      expect(parseTimeToMinutes('12:60', mockXLSX)).toBeNull(); // Invalid minute
-      expect(parseTimeToMinutes('abc', mockXLSX)).toBeNull(); // Invalid format
-    });
-  });
-
-  describe('parseHoursFromTimes', () => {
     it('should calculate hours between two times', () => {
-      const hours = parseHoursFromTimes('09:00', '17:00', mockXLSX);
+      const hours = calculateHours(540, 1020); // 09:00 to 17:00
       expect(hours).toBe(8);
     });
 
-    it('should calculate hours with minutes', () => {
-      const hours = parseHoursFromTimes('09:30', '17:45', mockXLSX);
+    it('should calculate hours with partial hours', () => {
+      const hours = calculateHours(570, 1065); // 09:30 to 17:45
       expect(hours).toBe(8.25);
     });
 
     it('should handle overnight shifts', () => {
-      const hours = parseHoursFromTimes('22:00', '06:00', mockXLSX);
+      const hours = calculateHours(1320, 360); // 22:00 to 06:00
       expect(hours).toBe(8);
     });
 
-    it('should return 0 for invalid start time', () => {
-      const hours = parseHoursFromTimes(null, '17:00', mockXLSX);
-      expect(hours).toBe(0);
-    });
-
-    it('should return 0 for invalid end time', () => {
-      const hours = parseHoursFromTimes('09:00', null, mockXLSX);
-      expect(hours).toBe(0);
-    });
-
     it('should return 0 for same start and end time', () => {
-      const hours = parseHoursFromTimes('09:00', '09:00', mockXLSX);
+      const hours = calculateHours(540, 540);
       expect(hours).toBe(0);
+    });
+
+    it('should handle zero start time (midnight)', () => {
+      const hours = calculateHours(0, 480); // 00:00 to 08:00
+      expect(hours).toBe(8);
+    });
+
+    it('should handle end time just before midnight', () => {
+      const hours = calculateHours(540, 1439); // 09:00 to 23:59
+      expect(hours).toBe(14.983333333333333);
+    });
+
+    it('should correctly handle edge case near midnight', () => {
+      const hours = calculateHours(1380, 60); // 23:00 to 01:00 (2 hours overnight)
+      expect(hours).toBe(2);
     });
   });
 });
