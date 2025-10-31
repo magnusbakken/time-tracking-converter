@@ -7,15 +7,17 @@ This is a React application built with Vite and styled with Tailwind CSS. GitHub
 1. Push this repository to GitHub.
 
 2. **(Optional)** Pre-create the `gh-pages` branch:
-   
+
    The workflows will automatically create the `gh-pages` branch on the first deployment if it doesn't exist. However, if you prefer to set it up manually first:
-   
+
    **Option A: Use the initialization script**
+
    ```bash
    ./init-gh-pages.sh
    ```
-   
+
    **Option B: Manual setup**
+
    ```bash
    git checkout --orphan gh-pages
    git rm -rf .
@@ -31,18 +33,20 @@ This is a React application built with Vite and styled with Tailwind CSS. GitHub
 3. In your repository, go to Settings → Pages.
 
 4. Set Source to "Deploy from a branch" and select the `gh-pages` branch with `/ (root)` folder.
-   
+
    **Note:** If the `gh-pages` branch hasn't been created yet, you'll need to wait for the first deployment to run (by pushing to `main` or opening a PR). After the first deployment, the branch will appear and you can configure it in Settings → Pages.
 
 ### How deployment works
 
 #### Main branch deployment
+
 - On every push to `main`, the workflow at `.github/workflows/deploy-pages.yml` runs.
 - It installs dependencies, runs tests, and builds the React app using Vite.
 - The built files from the `dist/` directory are copied to the root of the `gh-pages` branch.
 - A `.nojekyll` file ensures GitHub Pages serves files as-is.
 
 #### PR preview deployments
+
 - When a PR is marked as ready for review, the workflow at `.github/workflows/pr-preview.yml` runs.
 - It deploys the PR content to `pr/<pr-number>/` on the `gh-pages` branch.
 - A comment is automatically added to the PR with the preview URL.
@@ -57,6 +61,7 @@ After the first successful run, your sites will be available at:
 - PR preview: `https://<username>.github.io/<repo>/pr/<pr-number>/`
 
 For example, if your repo is `magnusbakken/time-tracking-converter`:
+
 - Main: `https://magnusbakken.github.io/time-tracking-converter/`
 - PR #123: `https://magnusbakken.github.io/time-tracking-converter/pr/123/`
 
@@ -69,16 +74,19 @@ If you use a custom domain, configure it in Settings → Pages.
 This project uses **pnpm** as its package manager. If you don't have pnpm installed, you can install it using one of these methods:
 
 **Using npm:**
+
 ```bash
 npm install -g pnpm
 ```
 
 **Using Homebrew (macOS):**
+
 ```bash
 brew install pnpm
 ```
 
 **Using Corepack (Node.js 16.13+):**
+
 ```bash
 corepack enable
 corepack prepare pnpm@latest --activate
@@ -89,32 +97,39 @@ For other installation methods, visit [pnpm.io/installation](https://pnpm.io/ins
 #### Why pnpm?
 
 This project uses pnpm instead of npm because:
+
 - **Faster**: Up to 2x faster than npm
 - **Disk efficient**: Uses a content-addressable store to save disk space
 - **Strict**: Creates a non-flat node_modules by default, preventing phantom dependencies
 
 #### Install dependencies
+
 ```bash
 pnpm install
 ```
 
 #### Run development server
+
 ```bash
 pnpm dev
 ```
+
 Then visit `http://localhost:5173`
 
 #### Run tests
+
 ```bash
 pnpm test
 ```
 
 #### Build for production
+
 ```bash
 pnpm build
 ```
 
 #### Preview production build
+
 ```bash
 pnpm preview
 ```

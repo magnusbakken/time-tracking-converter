@@ -1,24 +1,15 @@
-import { HOURS_COLS, COMMENT_COLS, DYNAMICS_HEADERS } from '../utils/transformUtils'
-
-function escapeHtml(s: string | number): string {
-  return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
+import { HOURS_COLS, DYNAMICS_HEADERS } from '../utils/transformUtils';
 
 interface DynamicsRow {
-  LineNum: string
-  ProjectDataAreaId: string
-  ProjId: string
-  ACTIVITYNUMBER: string
-  [key: string]: string | number
+  LineNum: string;
+  ProjectDataAreaId: string;
+  ProjId: string;
+  ACTIVITYNUMBER: string;
+  [key: string]: string | number;
 }
 
 interface SimplifiedPreviewProps {
-  rows: DynamicsRow[]
+  rows: DynamicsRow[];
 }
 
 function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
@@ -29,33 +20,37 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
           <td className="text-muted">No rows</td>
         </tr>
       </tbody>
-    )
+    );
   }
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const workRow = rows[0]
-  const lunchRow = rows[1]
-  
-  const workHours = HOURS_COLS.map(col => Number(workRow[col]) || 0)
-  const lunchHours = HOURS_COLS.map(col => Number(lunchRow[col]) || 0)
-  const dailyTotals = workHours.map((h, i) => h + lunchHours[i])
-  
-  const weeklyWorkTotal = workHours.reduce((sum, h) => sum + h, 0)
-  const weeklyLunchTotal = lunchHours.reduce((sum, h) => sum + h, 0)
-  const weeklyGrandTotal = weeklyWorkTotal + weeklyLunchTotal
-  
-  const headers = ['', ...dayLabels, 'Week Total']
-  
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const workRow = rows[0];
+  const lunchRow = rows[1];
+
+  const workHours = HOURS_COLS.map((col) => Number(workRow[col]) || 0);
+  const lunchHours = HOURS_COLS.map((col) => Number(lunchRow[col]) || 0);
+  const dailyTotals = workHours.map((h, i) => h + lunchHours[i]);
+
+  const weeklyWorkTotal = workHours.reduce((sum, h) => sum + h, 0);
+  const weeklyLunchTotal = lunchHours.reduce((sum, h) => sum + h, 0);
+  const weeklyGrandTotal = weeklyWorkTotal + weeklyLunchTotal;
+
+  const headers = ['', ...dayLabels, 'Week Total'];
+
   return (
     <>
       <thead>
         <tr>
-          {headers.map((h, i) => <th key={i}>{h}</th>)}
+          {headers.map((h, i) => (
+            <th key={i}>{h}</th>
+          ))}
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Invoiced</strong></td>
+          <td>
+            <strong>Invoiced</strong>
+          </td>
           {workHours.map((val, i) => (
             <td key={i}>{val > 0 ? val.toFixed(2) : ''}</td>
           ))}
@@ -64,7 +59,9 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
           </td>
         </tr>
         <tr>
-          <td><strong>Lunch</strong></td>
+          <td>
+            <strong>Lunch</strong>
+          </td>
           {lunchHours.map((val, i) => (
             <td key={i}>{val > 0 ? val.toFixed(2) : ''}</td>
           ))}
@@ -73,7 +70,9 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
           </td>
         </tr>
         <tr>
-          <td className="border-t-2 border-border pt-3"><strong>Total</strong></td>
+          <td className="border-t-2 border-border pt-3">
+            <strong>Total</strong>
+          </td>
           {dailyTotals.map((val, i) => (
             <td key={i} className="bg-[rgba(59,130,246,0.05)] border-t-2 border-border pt-3">
               <strong>{val > 0 ? val.toFixed(2) : ''}</strong>
@@ -85,11 +84,11 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
         </tr>
       </tbody>
     </>
-  )
+  );
 }
 
 interface RawPreviewProps {
-  rows: DynamicsRow[]
+  rows: DynamicsRow[];
 }
 
 function RawPreview({ rows }: RawPreviewProps) {
@@ -100,46 +99,50 @@ function RawPreview({ rows }: RawPreviewProps) {
           <td className="text-muted">No rows</td>
         </tr>
       </tbody>
-    )
+    );
   }
-  
-  const headers = DYNAMICS_HEADERS.filter(h => h in rows[0])
-  
+
+  const headers = DYNAMICS_HEADERS.filter((h) => h in rows[0]);
+
   return (
     <>
       <thead>
         <tr>
-          {headers.map(h => <th key={h}>{h}</th>)}
+          {headers.map((h) => (
+            <th key={h}>{h}</th>
+          ))}
         </tr>
       </thead>
       <tbody>
         {rows.map((r, idx) => (
           <tr key={idx}>
-            {headers.map(h => <td key={h}>{r[h]}</td>)}
+            {headers.map((h) => (
+              <td key={h}>{r[h]}</td>
+            ))}
           </tr>
         ))}
       </tbody>
     </>
-  )
+  );
 }
 
 interface PreviewSectionProps {
-  rows: DynamicsRow[]
-  viewMode: 'simplified' | 'raw'
-  onViewModeChange: (mode: 'simplified' | 'raw') => void
-  onDownloadCsv: () => void
-  onDownloadXlsx: () => void
+  rows: DynamicsRow[];
+  viewMode: 'simplified' | 'raw';
+  onViewModeChange: (mode: 'simplified' | 'raw') => void;
+  onDownloadCsv: () => void;
+  onDownloadXlsx: () => void;
 }
 
-export default function PreviewSection({ 
-  rows, 
-  viewMode, 
-  onViewModeChange, 
-  onDownloadCsv, 
-  onDownloadXlsx 
+export default function PreviewSection({
+  rows,
+  viewMode,
+  onViewModeChange,
+  onDownloadCsv,
+  onDownloadXlsx,
 }: PreviewSectionProps) {
-  const hasRows = rows && rows.length > 0
-  
+  const hasRows = rows && rows.length > 0;
+
   return (
     <section className="bg-panel border border-border rounded-[10px] p-4 my-4">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
@@ -167,7 +170,7 @@ export default function PreviewSection({
           </button>
         </div>
       </div>
-      
+
       <div className="overflow-auto border border-border rounded-lg">
         <table className="w-full border-collapse">
           {viewMode === 'simplified' ? (
@@ -177,7 +180,7 @@ export default function PreviewSection({
           )}
         </table>
       </div>
-      
+
       <div className="flex gap-3 mt-3">
         <button
           onClick={onDownloadCsv}
@@ -195,5 +198,5 @@ export default function PreviewSection({
         </button>
       </div>
     </section>
-  )
+  );
 }

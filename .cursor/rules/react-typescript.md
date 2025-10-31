@@ -1,6 +1,7 @@
 # Framework & Language
 
 ## React Guidelines
+
 - Use React for all UI components and application logic
 - Use TypeScript for all code with strict type checking enabled
 - Follow React best practices and conventions:
@@ -11,6 +12,7 @@
   - Implement proper component composition and reusability
 
 ## TypeScript Guidelines
+
 - Use strict mode with all TypeScript compiler options enabled
 - Define explicit types for all function parameters and return values
 - Create interfaces for complex data structures and component props

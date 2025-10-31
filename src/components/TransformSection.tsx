@@ -1,6 +1,6 @@
 interface TransformSectionProps {
-  onTransform: () => void
-  disabled: boolean
+  onTransform: () => void;
+  disabled: boolean;
 }
 
 export default function TransformSection({ onTransform, disabled }: TransformSectionProps) {
@@ -15,5 +15,5 @@ export default function TransformSection({ onTransform, disabled }: TransformSec
         Transform to Dynamics format
       </button>
     </section>
-  )
+  );
 }
