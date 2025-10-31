@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0b0f14;
+  --color-panel: #121822;
+  --color-muted: #93a1b1;
+  --color-text: #e6edf3;
+  --color-border: #223045;
+  --color-accent: #10b981;
+}
 
 /* Custom scrollbar for dark theme */
 @layer base {
@@ -28,6 +35,13 @@
       'Segoe UI Emoji';
     @apply leading-normal;
   }
+}
+
+/* File input button styling */
+input[type='file']::file-selector-button {
+  @apply bg-blue-500 text-white border-none rounded-md px-4 py-2 mr-3 cursor-pointer;
+  @apply hover:bg-blue-600;
+  @apply transition-colors duration-200;
 }
 
 /* React DatePicker custom styling for dark theme */
