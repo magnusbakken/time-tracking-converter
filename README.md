@@ -66,38 +66,39 @@ If you use a custom domain, configure it in Settings → Pages.
 
 #### Install dependencies
 ```bash
-npm install
+pnpm install
 ```
 
 #### Run development server
 ```bash
-npm run dev
+pnpm dev
 ```
 Then visit `http://localhost:5173`
 
 #### Run tests
 ```bash
-npm test
+pnpm test
 ```
 
 #### Build for production
 ```bash
-npm run build
+pnpm build
 ```
 
 #### Preview production build
 ```bash
-npm run preview
+pnpm preview
 ```
 
 ## Tech Stack
 
-- **React 19** - UI framework
+- **React 18** - UI framework
 - **TypeScript 5** - Type-safe JavaScript with strict mode enabled
 - **Vite** - Build tool and dev server
 - **Tailwind CSS 3** - Utility-first CSS framework
 - **Vitest** - Unit testing framework
 - **React Testing Library** - Component testing
+- **pnpm** - Fast, disk space efficient package manager
 - **dayjs** - Date manipulation
 - **xlsx** - Excel file reading/writing
 - **react-datepicker** - Date picker component
