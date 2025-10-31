@@ -87,13 +87,25 @@ jobs:
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Ensure we have the latest remote changes
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git fetch origin gh-pages
+          git reset --hard origin/gh-pages
+          
+          # Copy built files again after reset
+          cd ..
+          cp -r dist/* gh-pages/
+          touch gh-pages/.nojekyll
+          cd gh-pages
+          
           git add .
           
           if git diff --staged --quiet; then
             echo "No changes to deploy"
           else
             git commit -m "Deploy main branch to GitHub Pages"
-            git push -u origin gh-pages
+            git push origin gh-pages
             echo "Deployed to GitHub Pages"
           fi
 
