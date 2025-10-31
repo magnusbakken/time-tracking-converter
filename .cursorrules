@@ -1,0 +1,32 @@
+# Cursor Instructions
+
+## Framework & Language
+- Use React for all UI components and application logic
+- Follow React best practices and conventions:
+  - Use functional components with hooks
+  - Properly manage component state and side effects
+  - Follow React naming conventions (PascalCase for components, camelCase for functions)
+  - Use proper prop-types or TypeScript types for component props
+  - Implement proper component composition and reusability
+
+## Styling
+- Use Tailwind CSS for all styling
+- Follow Tailwind conventions and utility-first approach
+- Avoid custom CSS when Tailwind utilities can achieve the same result
+- Use Tailwind's responsive design utilities for mobile-first development
+- Leverage Tailwind's configuration for consistent theming
+
+## Testing
+- Write unit tests for all business logic
+- Use industry-standard testing libraries (Jest, React Testing Library, Vitest, etc.)
+- Ensure tests are executed on every build
+- Aim for meaningful test coverage of critical business logic
+- Write tests that are maintainable and easy to understand
+- Test behavior, not implementation details
+
+## Pull Request Guidelines
+- Keep PRs small and focused on a single concern
+- Each PR should address one feature, bug fix, or refactoring task
+- Break large features into multiple smaller, reviewable PRs
+- Write clear PR descriptions explaining the changes and their purpose
+- Ensure all tests pass before creating a PR
