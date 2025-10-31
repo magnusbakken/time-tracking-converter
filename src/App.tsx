@@ -87,9 +87,9 @@ function App() {
     }
   };
 
-  const handleDownloadXlsx = () => {
+  const handleDownloadXlsx = async () => {
     if (transformedRows.length) {
-      const blob = exportXlsx(transformedRows, DYNAMICS_HEADERS);
+      const blob = await exportXlsx(transformedRows, DYNAMICS_HEADERS);
       downloadBlob(blob, 'dynamics_import.xlsx');
     }
   };
@@ -119,7 +119,7 @@ function App() {
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
           onDownloadCsv={handleDownloadCsv}
-          onDownloadXlsx={handleDownloadXlsx}
+          onDownloadXlsx={() => void handleDownloadXlsx()}
         />
       </main>
 

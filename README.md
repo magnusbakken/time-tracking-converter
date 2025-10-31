@@ -108,6 +108,13 @@ This project uses pnpm instead of npm because:
 pnpm install
 ```
 
+**Security Note:** Before adding new dependencies to the project, always check if they have known security vulnerabilities. You can use tools like:
+
+- `pnpm audit` or `npm audit` to check for known vulnerabilities in dependencies
+- [Snyk](https://snyk.io/) for comprehensive security scanning
+- [GitHub Dependabot](https://github.com/dependabot) for automated security updates
+- Check the [National Vulnerability Database (NVD)](https://nvd.nist.gov/)
+
 #### Run development server
 
 ```bash
@@ -144,7 +151,7 @@ pnpm preview
 - **React Testing Library** - Component testing
 - **pnpm** - Fast, disk space efficient package manager
 - **dayjs** - Date manipulation
-- **xlsx** - Excel file reading/writing
+- **ExcelJS** - Excel file reading/writing (XLSX format)
 - **react-datepicker** - Date picker component
 
 ## TypeScript

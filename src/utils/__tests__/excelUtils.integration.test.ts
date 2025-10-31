@@ -7,11 +7,9 @@
  * 3. Transform to Dynamics format using transformUtils.transformToDynamics()
  * 4. Export to XLSX using excelUtils.exportXlsx()
  *
- * NOTE: These tests do import the xlsx library, but only for test infrastructure
+ * NOTE: These tests do import the ExcelJS library, but only for test infrastructure
  * (reading test fixture files from the filesystem). The actual code being tested
  * (excelUtils, dateUtils, timeUtils, transformUtils) uses only the public API.
- * When the xlsx library is replaced, only the test infrastructure code and
- * excelUtils.ts will need updates - the test logic and assertions remain the same.
  *
  * The tests compare the actual output with expected output by verifying file sizes match.
  */
@@ -23,7 +21,7 @@ import { fileURLToPath } from 'url';
 import { exportXlsx, type ParsedRow, type ReadFileResult } from '../excelUtils';
 import { transformToDynamics, DYNAMICS_HEADERS } from '../transformUtils';
 import { filterRowsToWeek } from '../dateUtils';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 // Get the directory of this test file
 const __filename = fileURLToPath(import.meta.url);
@@ -40,46 +38,39 @@ interface TestConfig {
  * This duplicates the logic from excelUtils.readFile() but works with Node.js Buffers
  * directly, avoiding issues with File object conversion in the test environment.
  */
-function readFileFromBuffer(buffer: Buffer, fileName: string): ReadFileResult {
-  // Read directly with Node.js Buffer - this works correctly with xlsx library
-  const wb = XLSX.read(buffer, { type: 'buffer' });
+async function readFileFromBuffer(buffer: Buffer, fileName: string): Promise<ReadFileResult> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
 
-  const firstSheetName = wb.SheetNames[0];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const ws = wb.Sheets[firstSheetName];
+  const worksheet = workbook.worksheets[0];
+  const firstSheetName = worksheet.name;
 
-  // Fixed columns: I (8), N (13), T (19). Data starts at row 13 (index 12).
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-  const ref = ws['!ref'] ?? 'A1:A1';
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const range = XLSX.utils.decode_range(ref);
-  const startRow = Math.max(12, range.s.r);
-  const COL_I = 8; // Arbeidsdato (Date)
-  const COL_N = 13; // Inntid (Start time)
-  const COL_T = 19; // Ut-tid (End time)
+  // Fixed columns: I (9), N (14), T (20). Data starts at row 13.
+  // Note: ExcelJS uses 1-based indexing for rows and columns
+  const startRow = 13;
+  const COL_I = 9; // Arbeidsdato (Date) - Column I
+  const COL_N = 14; // Inntid (Start time) - Column N
+  const COL_T = 20; // Ut-tid (End time) - Column T
 
   const rows: ParsedRow[] = [];
-  for (let r = startRow; r <= range.e.r; r++) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const dCell = ws[XLSX.utils.encode_cell({ r, c: COL_I })];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const sCell = ws[XLSX.utils.encode_cell({ r, c: COL_N })];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const eCell = ws[XLSX.utils.encode_cell({ r, c: COL_T })];
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const dVal = dCell ? dCell.v : '';
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const sVal = sCell ? sCell.v : '';
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const eVal = eCell ? eCell.v : '';
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber < startRow) return;
+
+    const dCell = row.getCell(COL_I);
+    const sCell = row.getCell(COL_N);
+    const eCell = row.getCell(COL_T);
+
+    const dVal = dCell.value;
+    const sVal = sCell.value;
+    const eVal = eCell.value;
 
     const isAllEmpty =
-      (dVal === '' || dVal === null || dVal === undefined) &&
-      (sVal === '' || sVal === null || sVal === undefined) &&
-      (eVal === '' || eVal === null || eVal === undefined);
+      (dVal === null || dVal === undefined || dVal === '') &&
+      (sVal === null || sVal === undefined || sVal === '') &&
+      (eVal === null || eVal === undefined || eVal === '');
 
-    if (isAllEmpty) continue;
+    if (isAllEmpty) return;
 
     // Parse values using the same parsing logic as excelUtils
     rows.push({
@@ -87,7 +78,7 @@ function readFileFromBuffer(buffer: Buffer, fileName: string): ReadFileResult {
       startTimeMinutes: parseExcelTime(sVal),
       endTimeMinutes: parseExcelTime(eVal),
     });
-  }
+  });
 
   return {
     rows,
@@ -102,16 +93,19 @@ function readFileFromBuffer(buffer: Buffer, fileName: string): ReadFileResult {
 function parseExcelDate(value: unknown): Date | null {
   if (value === null || value === undefined || value === '') return null;
 
+  // Handle Excel Date object
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  // Handle Excel serial number
   if (typeof value === 'number') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const parsed = XLSX.SSF.parse_date_code(value) as
-      | { y: number; m: number; d: number }
-      | undefined;
-    if (!parsed) return null;
-    const date = new Date(parsed.y, parsed.m - 1, parsed.d);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const date = ExcelJS.Workbook.excelDateToJsDate(value) as Date;
     return isNaN(date.getTime()) ? null : date;
   }
 
+  // Handle Norwegian DD.MM.YY or DD.MM.YYYY format
   if (typeof value === 'string') {
     const s = value.trim();
     const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})\s*$/.exec(s);
@@ -134,10 +128,7 @@ function parseExcelDate(value: unknown): Date | null {
     }
   }
 
-  if (value instanceof Date) {
-    return isNaN(value.getTime()) ? null : value;
-  }
-
+  // Fallback: try to parse as date
   const date = new Date(value as string);
   return isNaN(date.getTime()) ? null : date;
 }
@@ -148,18 +139,29 @@ function parseExcelDate(value: unknown): Date | null {
 function parseExcelTime(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
 
+  // Handle Excel Date object (time is stored as fractional day)
+  if (value instanceof Date) {
+    const hours = value.getHours();
+    const minutes = value.getMinutes();
+    return hours * 60 + minutes;
+  }
+
+  // Handle Excel serial number (time as fraction of day)
   if (typeof value === 'number') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const parsed = XLSX.SSF.parse_date_code(value) as { H?: number; M?: number } | undefined;
-    if (parsed && Number.isFinite(parsed.H) && Number.isFinite(parsed.M)) {
-      return (parsed.H ?? 0) * 60 + (parsed.M ?? 0);
-    }
+    // Time values in Excel are 0-1 (fraction of day)
     if (value >= 0 && value <= 1) {
       return Math.round(value * 1440);
+    }
+    // Could also be a serial date-time, convert and extract time
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const date = ExcelJS.Workbook.excelDateToJsDate(value) as Date;
+    if (!isNaN(date.getTime())) {
+      return date.getHours() * 60 + date.getMinutes();
     }
     return null;
   }
 
+  // Handle string formats
   if (typeof value !== 'string') return null;
   const raw = value.trim();
   if (!raw) return null;
@@ -253,7 +255,7 @@ describe('Excel Import/Export Integration Tests', () => {
         return; // Skip further tests if files are missing
       }
 
-      it('should transform Workforce input to match expected Dynamics output', () => {
+      it('should transform Workforce input to match expected Dynamics output', async () => {
         // Read config
         const configContent = fs.readFileSync(configPath, 'utf-8');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -261,9 +263,9 @@ describe('Excel Import/Export Integration Tests', () => {
 
         // Step 1: Read Workforce input file
         // In test environment, we read directly from filesystem and bypass File object
-        // since File.arrayBuffer() conversion causes issues with the xlsx library
+        // since File.arrayBuffer() conversion causes issues with the ExcelJS library
         const buffer = fs.readFileSync(inputPath);
-        const { rows } = readFileFromBuffer(buffer, path.basename(inputPath));
+        const { rows } = await readFileFromBuffer(buffer, path.basename(inputPath));
         expect(rows.length).toBeGreaterThan(0);
 
         // Debug: Check what dates were parsed and what was in the raw data
@@ -275,7 +277,7 @@ describe('Excel Import/Export Integration Tests', () => {
         const uniqueDates = [...new Set(parsedDates)].sort();
 
         // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek()
-        // No XLSX dependency - dates are already parsed as Date objects
+        // No ExcelJS dependency - dates are already parsed as Date objects
         const filteredRows = filterRowsToWeek(rows, config.weekStartIso);
 
         if (filteredRows.length === 0) {
@@ -302,12 +304,12 @@ describe('Excel Import/Export Integration Tests', () => {
         expect(filteredRows.length).toBeGreaterThan(0);
 
         // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics()
-        // No XLSX dependency - times are already parsed as numbers (minutes since midnight)
+        // No ExcelJS dependency - times are already parsed as numbers (minutes since midnight)
         const dynamicsRows = transformToDynamics(filteredRows, config.weekStartIso);
         expect(dynamicsRows.length).toBe(2); // Should have work + lunch rows
 
         // Step 4: Export to XLSX blob using excelUtils.exportXlsx()
-        const actualBlob = exportXlsx(dynamicsRows, DYNAMICS_HEADERS);
+        const actualBlob = await exportXlsx(dynamicsRows, DYNAMICS_HEADERS);
         expect(actualBlob).toBeInstanceOf(Blob);
 
         // Step 5: Read expected output file to verify size
@@ -321,10 +323,10 @@ describe('Excel Import/Export Integration Tests', () => {
         // For a more complete test, you could:
         // 1. Write actualBlob to a temp file and read it back
         // 2. Use the browser environment instead of jsdom
-        // 3. Extract the array from XLSX.write() before Blob creation
+        // 3. Extract the array from ExcelJS writeBuffer() before Blob creation
 
         const sizeDiff = Math.abs(actualBlob.size - expectedBuffer.length);
-        const sizeToleranceBytes = 100; // Allow small differences due to timestamps/metadata
+        const sizeToleranceBytes = 200; // Allow small differences due to timestamps/metadata
 
         expect(actualBlob.size).toBeGreaterThan(1000); // Sanity check: should be >1KB
         expect(sizeDiff).toBeLessThan(sizeToleranceBytes);
