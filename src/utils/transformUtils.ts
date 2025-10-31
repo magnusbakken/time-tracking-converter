@@ -1,5 +1,6 @@
-import dayjs, { Dayjs } from 'dayjs';
-import { parseHoursFromTimes } from './timeUtils';
+import dayjs from 'dayjs';
+import { calculateHours } from './timeUtils';
+import type { FilteredRow } from './dateUtils';
 
 // Dynamics column definitions and explicit header order
 const HOURS_COLS = [
@@ -32,17 +33,6 @@ export const DYNAMICS_HEADERS = [
 
 export { HOURS_COLS, COMMENT_COLS };
 
-interface RawRow {
-  date: unknown;
-  startTime: unknown;
-  endTime: unknown;
-}
-
-interface FilteredRow {
-  row: RawRow;
-  date: Dayjs;
-}
-
 type DynamicsRow = {
   LineNum: string;
   ProjectDataAreaId: string;
@@ -52,14 +42,11 @@ type DynamicsRow = {
   Record<(typeof COMMENT_COLS)[number], string>;
 
 /**
- * Transform filtered rows to Dynamics format
- * Creates two rows: one for work hours and one for lunch
+ * Transform filtered rows to Dynamics format.
+ * Creates two rows: one for work hours and one for lunch.
+ * All date/time parsing has already been done by excelUtils.
  */
-export function transformToDynamics(
-  rows: FilteredRow[],
-  weekStartIso: string,
-  XLSX: typeof import('xlsx')
-): DynamicsRow[] {
+export function transformToDynamics(rows: FilteredRow[], weekStartIso: string): DynamicsRow[] {
   // Build Dynamics weekly format with two rows: work and lunch
   const weekStart = dayjs(weekStartIso);
   const totalsByDay = new Array(7).fill(0) as number[];
@@ -68,7 +55,7 @@ export function transformToDynamics(
     // Determine index 0..6 where 0 is Monday (weekStart)
     const dayIndex = Math.max(0, Math.min(6, date.diff(weekStart, 'day')));
 
-    const hours = parseHoursFromTimes(row.startTime, row.endTime, XLSX);
+    const hours = calculateHours(row.startTimeMinutes, row.endTimeMinutes);
     if (Number.isFinite(hours) && hours > 0) {
       totalsByDay[dayIndex] += hours;
     }

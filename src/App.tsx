@@ -1,32 +1,21 @@
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import UploadSection from './components/UploadSection';
 import WeekSelector from './components/WeekSelector';
 import TransformSection from './components/TransformSection';
 import PreviewSection from './components/PreviewSection';
-import { readFile, exportCsv, exportXlsx, downloadBlob } from './utils/excelUtils';
+import { readFile, exportCsv, exportXlsx, downloadBlob, type ParsedRow } from './utils/excelUtils';
 import {
-  parseDateCell,
   setWeekStartFromDate,
   getWeekInfo,
   getCurrentWeekMonday,
   filterRowsToWeek,
   checkCurrentWeekInFile,
+  getValidDates,
+  type WeekInfo,
 } from './utils/dateUtils';
 import { transformToDynamics, DYNAMICS_HEADERS } from './utils/transformUtils';
-
-interface RawRow {
-  date: unknown;
-  startTime: unknown;
-  endTime: unknown;
-}
-
-interface WeekInfo {
-  weekNum: number;
-  year: number;
-}
 
 interface DynamicsRow {
   LineNum: string;
@@ -37,7 +26,7 @@ interface DynamicsRow {
 }
 
 function App() {
-  const [rawRows, setRawRows] = useState<RawRow[]>([]);
+  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [fileMeta, setFileMeta] = useState('');
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const [weekInfo, setWeekInfo] = useState<WeekInfo | null>(null);
@@ -50,18 +39,16 @@ function App() {
     if (!file) return;
 
     try {
-      const { rawRows: rows, fileName, sheetName } = await readFile(file);
-      setRawRows(rows);
+      const { rows, fileName, sheetName } = await readFile(file);
+      setParsedRows(rows);
       setFileMeta(`${fileName} • ${sheetName} • ${rows.length} rows`);
 
       // Check if current week exists in file
-      const { hasCurrentWeek, warningMessage: warning } = checkCurrentWeekInFile(rows, XLSX);
+      const { hasCurrentWeek, warningMessage: warning } = checkCurrentWeekInFile(rows);
       setWarningMessage(warning);
 
       // Auto-select week
-      const dates = rows
-        .map((r) => parseDateCell(r.date, XLSX))
-        .filter((d): d is NonNullable<typeof d> => d !== null);
+      const dates = getValidDates(rows);
       if (dates.length) {
         let initialWeek: string;
         if (hasCurrentWeek) {
@@ -88,8 +75,8 @@ function App() {
 
   const handleTransform = () => {
     if (!weekStart) return;
-    const filtered = filterRowsToWeek(rawRows, weekStart, XLSX);
-    const transformed = transformToDynamics(filtered, weekStart, XLSX);
+    const filtered = filterRowsToWeek(parsedRows, weekStart);
+    const transformed = transformToDynamics(filtered, weekStart);
     setTransformedRows(transformed);
   };
 
@@ -125,7 +112,7 @@ function App() {
           warningMessage={warningMessage}
         />
 
-        <TransformSection onTransform={handleTransform} disabled={rawRows.length === 0} />
+        <TransformSection onTransform={handleTransform} disabled={parsedRows.length === 0} />
 
         <PreviewSection
           rows={transformedRows}

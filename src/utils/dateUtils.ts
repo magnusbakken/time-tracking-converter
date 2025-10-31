@@ -1,68 +1,22 @@
 import dayjs, { Dayjs } from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import type { ParsedRow } from './excelUtils';
 
 dayjs.extend(isoWeek);
 
-interface WeekInfo {
+export interface WeekInfo {
   weekNum: number;
   year: number;
 }
 
-interface CheckCurrentWeekResult {
+export interface CheckCurrentWeekResult {
   hasCurrentWeek: boolean;
   warningMessage: string | null;
 }
 
-interface ParsedDateCode {
-  y: number;
-  m: number;
-  d: number;
-  H?: number;
-  M?: number;
-  S?: number;
-}
-
-/**
- * Parse a date cell value from Excel or string format
- * Handles Excel serial numbers, Norwegian DD.MM.YY format, and generic parse
- */
-export function parseDateCell(value: unknown, XLSX: typeof import('xlsx')): Dayjs | null {
-  // Handle Excel serial number
-  if (typeof value === 'number') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const jsDate = XLSX.SSF.parse_date_code(value) as ParsedDateCode | undefined;
-    if (!jsDate) return null;
-    const d = dayjs(new Date(jsDate.y, jsDate.m - 1, jsDate.d));
-    return d.isValid() ? d : null;
-  }
-
-  // Handle Norwegian DD.MM.YY or DD.MM.YYYY format
-  if (typeof value === 'string') {
-    const s = value.trim();
-    const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})\s*$/.exec(s);
-    if (m) {
-      const day = parseInt(m[1], 10);
-      const month = parseInt(m[2], 10);
-      let year = parseInt(m[3], 10);
-      if (m[3].length === 2) year = 2000 + year; // Assume 2000-2099 for two-digit year
-
-      // Validate explicit day/month ranges to avoid Date rollover
-      if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
-      if (month < 1 || month > 12) return null;
-      if (day < 1) return null;
-      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-      const monthLengths = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-      const maxDay = monthLengths[month - 1];
-      if (day > maxDay) return null;
-
-      const d = dayjs(new Date(year, month - 1, day));
-      return d.isValid() ? d : null;
-    }
-  }
-
-  // Fallback to generic parse
-  const d = dayjs(value as string | Date);
-  return d.isValid() ? d : null;
+export interface FilteredRow {
+  row: ParsedRow;
+  date: Dayjs;
 }
 
 /**
@@ -106,50 +60,41 @@ export function isDateInWeek(date: Dayjs, weekStartIso: string): boolean {
   return date.isSame(weekStart) || (date.isAfter(weekStart) && date.isBefore(weekEnd));
 }
 
-interface RawRow {
-  date: unknown;
-  startTime: unknown;
-  endTime: unknown;
-}
-
-interface FilteredRow {
-  row: RawRow;
-  date: Dayjs;
-}
-
 /**
- * Filter rows to only include those within the specified week
+ * Filter rows to only include those within the specified week.
+ * Rows with null dates are excluded.
  */
-export function filterRowsToWeek(
-  rows: RawRow[],
-  weekStartIso: string,
-  XLSX: typeof import('xlsx')
-): FilteredRow[] {
+export function filterRowsToWeek(rows: ParsedRow[], weekStartIso: string): FilteredRow[] {
   if (!weekStartIso) return [];
   const start = dayjs(weekStartIso);
   const end = start.add(7, 'day');
 
   return rows
     .map((r) => {
-      const d = parseDateCell(r.date, XLSX);
-      return d ? { row: r, date: d } : null;
+      if (!r.date) return null;
+      const d = dayjs(r.date);
+      return d.isValid() ? { row: r, date: d } : null;
     })
     .filter((item): item is FilteredRow => item !== null)
     .filter(({ date }) => date.isSame(start) || (date.isAfter(start) && date.isBefore(end)));
 }
 
 /**
- * Check if the current week exists in the uploaded file
+ * Get all valid dates from parsed rows
+ */
+export function getValidDates(rows: ParsedRow[]): Dayjs[] {
+  return rows
+    .map((r) => (r.date ? dayjs(r.date) : null))
+    .filter((d): d is Dayjs => d?.isValid() ?? false);
+}
+
+/**
+ * Check if the current week exists in the uploaded file.
  * Returns { hasCurrentWeek: boolean, warningMessage: string | null }
  */
-export function checkCurrentWeekInFile(
-  rawRows: RawRow[],
-  XLSX: typeof import('xlsx')
-): CheckCurrentWeekResult {
+export function checkCurrentWeekInFile(rows: ParsedRow[]): CheckCurrentWeekResult {
   const currentMonday = getCurrentWeekMonday();
-  const dates = rawRows
-    .map((r) => parseDateCell(r.date, XLSX))
-    .filter((d): d is Dayjs => d !== null);
+  const dates = getValidDates(rows);
 
   if (!dates.length) {
     return { hasCurrentWeek: false, warningMessage: null };
