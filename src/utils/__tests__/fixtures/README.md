@@ -35,17 +35,13 @@ Each `config.json` file should contain:
 
 ## Test Files
 
-- **workforce-input.xlsx**: The input Workforce timesheet file  
-  **⚠️ Important**: Use `.xlsx` format (not `.xls`). The old `.xls` format is not fully supported by the xlsx library without additional dependencies.
+- **workforce-input.xlsx** (or `.xls`): The input Workforce timesheet file
 - **expected-output.xlsx**: The expected Dynamics output file after transformation
 - **config.json**: Configuration for the test case (week start date, etc.)
 
 ### File Format Notes
 
-The integration tests work with `.xlsx` files (Office Open XML format). If you have `.xls` files (older Excel format):
-1. Open the file in Excel or LibreOffice
-2. Save As → Choose "Excel Workbook (.xlsx)" format
-3. Use the converted `.xlsx` file for testing
+The integration tests support both `.xlsx` and `.xls` formats. The test reads files directly from the filesystem using Node.js, which handles the Excel parsing correctly for both formats.
 
 ## Adding New Test Cases
 
