@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # npm dependencies
+  # Security updates are handled immediately via GitHub Security Advisories
+  # Version updates are bundled monthly with a 1-day cooldown
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "03:00"
+      timezone: "UTC"
+    # 1-day cooldown for version updates to avoid recently compromised packages
+    # (does not apply to security updates)
+    cooldown:
+      default-days: 1
+    # Allow multiple PRs for security updates (handled separately from version updates)
+    open-pull-requests-limit: 10
+    # Group all version updates into a single monthly PR
+    groups:
+      monthly-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "npm"
+
+  # GitHub Actions - monthly bundled updates  
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "03:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "github-actions"
