@@ -44,7 +44,9 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
           {headers.map((h, i) => (
             <th
               key={i}
-              className="text-left px-4 py-3 font-semibold text-text border-b-2 border-border"
+              className={`px-4 py-3 font-semibold text-text border-b-2 border-border ${
+                i === 0 ? 'text-left' : 'text-right'
+              }`}
             >
               {h}
             </th>
