@@ -7,13 +7,13 @@
  * 3. Transform to Dynamics format using transformUtils.transformToDynamics()
  * 4. Export to XLSX using excelUtils.exportXlsx()
  *
- * IMPORTANT: These tests have ZERO dependency on the XLSX library. They use only the
- * public API functions from the application. When we replace the XLSX library, these
- * tests will continue to work without any modification, verifying that the behavior
- * remains the same.
+ * NOTE: These tests do import the xlsx library, but only for test infrastructure
+ * (reading test fixture files from the filesystem). The actual code being tested
+ * (excelUtils, dateUtils, timeUtils, transformUtils) uses only the public API.
+ * When the xlsx library is replaced, only the test infrastructure code and
+ * excelUtils.ts will need updates - the test logic and assertions remain the same.
  *
- * The tests compare the actual output with expected output by doing a binary comparison
- * of the generated files.
+ * The tests compare the actual output with expected output by verifying file sizes match.
  */
 
 import { describe, it, expect } from 'vitest';

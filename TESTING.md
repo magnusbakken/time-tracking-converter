@@ -7,6 +7,7 @@ An automated integration test suite has been set up to verify that the Workforce
 ## Test Structure
 
 The integration tests are located at:
+
 - **Test file**: `src/utils/__tests__/excelUtils.integration.test.ts`
 - **Test fixtures**: `src/utils/__tests__/fixtures/`
 
@@ -59,16 +60,19 @@ src/utils/__tests__/fixtures/
 ## Running the Tests
 
 ### Run All Tests
+
 ```bash
 pnpm test
 ```
 
 ### Run Only Integration Tests
+
 ```bash
 pnpm test excelUtils.integration.test.ts
 ```
 
 ### Run Tests in Watch Mode
+
 ```bash
 pnpm test:watch excelUtils.integration.test.ts
 ```
@@ -88,11 +92,13 @@ For each test case, the integration test will:
 ### Comparison Method
 
 Due to limitations in the Node.js test environment (jsdom Blob implementation), the tests perform **file size comparison** as a verification method:
+
 - Compares the generated file size against the expected file size
 - Allows small differences (< 100 bytes) for timestamps/metadata
 - Verifies the Blob is substantial (> 1KB)
 
 This provides confidence that the complete pipeline (read → filter → transform → export) is working correctly. The integration tests verify:
+
 1. ✅ Workforce file is read and parsed correctly
 2. ✅ Dates and times are parsed from Excel formats
 3. ✅ Rows are filtered to the correct week
@@ -102,6 +108,7 @@ This provides confidence that the complete pipeline (read → filter → transfo
 ## Test Output
 
 ### When Tests Pass ✅
+
 ```
 ✓ src/utils/__tests__/excelUtils.integration.test.ts
   ✓ Excel Import/Export Integration Tests
@@ -114,17 +121,21 @@ This provides confidence that the complete pipeline (read → filter → transfo
 ```
 
 ### When Tests Fail ❌
+
 The test will show an error message if:
+
 - The file can't be read
 - No rows are found in the specified week
 - The generated file size differs significantly from expected
 
 Example error:
+
 ```
 Error: No rows found for week starting 2025-10-27.
 ```
 
 If a test fails, check:
+
 1. The `config.json` has the correct `weekStartIso` (must be a Monday)
 2. The Workforce input file contains data for that week
 3. The file format is readable (.xls or .xlsx)
@@ -178,6 +189,7 @@ Binary comparison might seem less precise than cell-by-cell comparison, but it h
 ### When Replacing the Excel Library
 
 After replacing the XLSX library:
+
 1. Run the integration tests
 2. If the size differs significantly, manually compare the generated output with expected output in Excel
 3. If the output is functionally equivalent but the format differs slightly (e.g., different internal structure), you may need to regenerate the expected output files
