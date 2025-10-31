@@ -77,12 +77,13 @@ pnpm test:watch excelUtils.integration.test.ts
 
 For each test case, the integration test will:
 
-1. ✅ Read the Workforce input file
-2. ✅ Extract time entry rows (from columns I, N, T starting at row 13)
-3. ✅ Filter entries for the specified week
-4. ✅ Transform to Dynamics format (work hours + lunch)
-5. ✅ Export to XLSX format
-6. ✅ Compare the output with the expected file
+1. ✅ Read the Workforce input file using `excelUtils.readFile()`
+2. ✅ Filter entries for the specified week using `dateUtils.filterRowsToWeek()`
+3. ✅ Transform to Dynamics format using `transformUtils.transformToDynamics()`
+4. ✅ Export to XLSX format using `excelUtils.exportXlsx()`
+5. ✅ Compare the output with the expected file
+
+**Important**: The tests use the public API functions from the codebase rather than directly calling the XLSX library. This means when you replace the XLSX library later, these same tests will continue to work without modification, verifying that the behavior hasn't changed.
 
 The test compares:
 - Number of rows
@@ -135,3 +136,13 @@ Once you add the test files and run `pnpm test`, you'll have a comprehensive tes
 2. **Confidence**: Run tests before and after replacing XLSX to ensure no breakage
 3. **Documentation**: Test cases serve as executable documentation of expected behavior
 4. **Regression Prevention**: Catch issues early if changes break existing functionality
+5. **Library Independence**: Tests use public API functions, so they'll work the same when XLSX is replaced
+
+## Architecture
+
+The integration tests are designed to be library-agnostic:
+
+- **Code Under Test**: Uses `readFile()`, `filterRowsToWeek()`, `transformToDynamics()`, and `exportXlsx()` functions
+- **Library Abstraction**: XLSX implementation details are hidden behind these functions
+- **Future-Proof**: When XLSX is replaced, only the implementation inside these functions needs to change
+- **Same Tests**: These integration tests will verify that the new library works identically

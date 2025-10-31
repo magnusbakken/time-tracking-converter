@@ -1,11 +1,29 @@
+/**
+ * Integration tests for Excel import/export functionality
+ * 
+ * These tests verify the complete workflow from Workforce import to Dynamics export:
+ * 1. Read Workforce file using excelUtils.readFile()
+ * 2. Filter rows for a specific week using dateUtils.filterRowsToWeek()
+ * 3. Transform to Dynamics format using transformUtils.transformToDynamics()
+ * 4. Export to XLSX using excelUtils.exportXlsx()
+ * 
+ * IMPORTANT: These tests use the public API functions from excelUtils, dateUtils, and
+ * transformUtils rather than directly using XLSX. This means when we replace the XLSX
+ * library, these tests will continue to work without modification, verifying that the
+ * behavior remains the same.
+ * 
+ * Note: XLSX is only imported directly for comparison purposes (reading expected output
+ * files), which is test infrastructure and won't affect the code under test.
+ */
+
 import { describe, it, expect } from 'vitest';
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import dayjs from 'dayjs';
-import { exportXlsx } from '../excelUtils';
+import { readFile, exportXlsx } from '../excelUtils';
 import { transformToDynamics, DYNAMICS_HEADERS } from '../transformUtils';
+import { filterRowsToWeek } from '../dateUtils';
 
 // Get the directory of this test file
 const __filename = fileURLToPath(import.meta.url);
@@ -17,92 +35,17 @@ interface TestConfig {
   description?: string;
 }
 
-interface RawRow {
-  date: unknown;
-  startTime: unknown;
-  endTime: unknown;
-}
-
-interface FilteredRow {
-  row: RawRow;
-  date: dayjs.Dayjs;
-}
-
 /**
- * Read Excel file from filesystem (for testing)
+ * Create a File object from a filesystem path (for testing)
  */
-function readExcelFile(filePath: string): { workbook: XLSX.WorkBook; rawRows: RawRow[] } {
+function createFileFromPath(filePath: string): File {
   const buffer = fs.readFileSync(filePath);
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-
-  const firstSheetName = workbook.SheetNames[0];
-  const ws = workbook.Sheets[firstSheetName];
-
-  // Fixed columns: I (8), N (13), T (19). Data starts at row 13 (index 12).
-  const ref = ws['!ref'] ?? 'A1:A1';
-  const range = XLSX.utils.decode_range(ref);
-  const startRow = Math.max(12, range.s.r); // 0-based index for row 13
-  const COL_I = 8; // Arbeidsdato (Date)
-  const COL_N = 13; // Inntid (Start time)
-  const COL_T = 19; // Ut-tid (End time)
-
-  const rows: RawRow[] = [];
-  for (let r = startRow; r <= range.e.r; r++) {
-    const dCell = ws[XLSX.utils.encode_cell({ r, c: COL_I })];
-    const sCell = ws[XLSX.utils.encode_cell({ r, c: COL_N })];
-    const eCell = ws[XLSX.utils.encode_cell({ r, c: COL_T })];
-
-    const dVal = dCell ? dCell.v : '';
-    const sVal = sCell ? sCell.v : '';
-    const eVal = eCell ? eCell.v : '';
-
-    const isAllEmpty =
-      (dVal === '' || dVal === null || dVal === undefined) &&
-      (sVal === '' || sVal === null || sVal === undefined) &&
-      (eVal === '' || eVal === null || eVal === undefined);
-
-    if (isAllEmpty) continue;
-
-    rows.push({ date: dVal, startTime: sVal, endTime: eVal });
-  }
-
-  return { workbook, rawRows: rows };
-}
-
-/**
- * Filter and parse rows for a specific week
- */
-function filterRowsForWeek(rawRows: RawRow[], weekStartIso: string): FilteredRow[] {
-  const weekStart = dayjs(weekStartIso);
-  const weekEnd = weekStart.add(6, 'day');
-
-  const filtered: FilteredRow[] = [];
-
-  for (const row of rawRows) {
-    let date: dayjs.Dayjs | null = null;
-
-    // Parse date from various formats
-    if (typeof row.date === 'number') {
-      // Excel serial date
-      const excelDate = XLSX.SSF.parse_date_code(row.date);
-      if (excelDate) {
-        date = dayjs(new Date(excelDate.y, excelDate.m - 1, excelDate.d));
-      }
-    } else if (typeof row.date === 'string') {
-      date = dayjs(row.date);
-    } else if (row.date instanceof Date) {
-      date = dayjs(row.date);
-    }
-
-    if (!date || !date.isValid()) continue;
-
-    // Check if date is in the selected week
-    if (date.isSame(weekStart, 'day') || date.isSame(weekEnd, 'day') || (date.isAfter(weekStart) && date.isBefore(weekEnd))) {
-      filtered.push({ row, date });
-    }
-  }
-
-  return filtered;
+  const fileName = path.basename(filePath);
+  return new File([buffer], fileName, {
+    type: filePath.endsWith('.xlsx')
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      : 'application/vnd.ms-excel',
+  });
 }
 
 /**
@@ -255,7 +198,7 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
         return; // Skip further tests if files are missing
       }
 
-      it('should transform Workforce input to match expected Dynamics output', () => {
+      it('should transform Workforce input to match expected Dynamics output', async () => {
         // Read config
         const configContent = fs.readFileSync(configPath, 'utf-8');
         const config: TestConfig = JSON.parse(configContent);
@@ -264,19 +207,20 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
           console.log(`  Description: ${config.description}`);
         }
 
-        // Step 1: Read Workforce input file
-        const { rawRows } = readExcelFile(inputPath);
+        // Step 1: Read Workforce input file using the excelUtils.readFile function
+        const inputFile = createFileFromPath(inputPath);
+        const { rawRows, workbook } = await readFile(inputFile);
         expect(rawRows.length).toBeGreaterThan(0);
 
-        // Step 2: Filter rows for the specified week
-        const filteredRows = filterRowsForWeek(rawRows, config.weekStartIso);
+        // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek
+        const filteredRows = filterRowsToWeek(rawRows, config.weekStartIso, XLSX);
         expect(filteredRows.length).toBeGreaterThan(0);
 
-        // Step 3: Transform to Dynamics format
+        // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics
         const dynamicsRows = transformToDynamics(filteredRows, config.weekStartIso, XLSX);
         expect(dynamicsRows.length).toBe(2); // Should have work + lunch rows
 
-        // Step 4: Export to XLSX blob
+        // Step 4: Export to XLSX blob using excelUtils.exportXlsx
         const blob = exportXlsx(dynamicsRows, DYNAMICS_HEADERS);
         expect(blob).toBeInstanceOf(Blob);
 
