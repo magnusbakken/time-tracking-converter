@@ -4,7 +4,7 @@ import { parseTimeToMinutes, parseHoursFromTimes } from '../timeUtils'
 // Mock XLSX for testing
 const mockXLSX = {
   SSF: {
-    parse_date_code: (value) => {
+    parse_date_code: (value: number) => {
       // Simulate Excel time serial (0.5 = 12:00, 0.375 = 09:00, etc.)
       if (value >= 0 && value <= 1) {
         const totalMinutes = Math.round(value * 1440)

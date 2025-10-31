@@ -17,17 +17,36 @@ import {
 } from './utils/dateUtils'
 import { transformToDynamics, DYNAMICS_HEADERS } from './utils/transformUtils'
 
-function App() {
-  const [rawRows, setRawRows] = useState([])
-  const [fileMeta, setFileMeta] = useState('')
-  const [weekStart, setWeekStart] = useState(null)
-  const [weekInfo, setWeekInfo] = useState(null)
-  const [warningMessage, setWarningMessage] = useState(null)
-  const [transformedRows, setTransformedRows] = useState([])
-  const [viewMode, setViewMode] = useState('simplified')
+interface RawRow {
+  date: unknown
+  startTime: unknown
+  endTime: unknown
+}
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files && e.target.files[0]
+interface WeekInfo {
+  weekNum: number
+  year: number
+}
+
+interface DynamicsRow {
+  LineNum: string
+  ProjectDataAreaId: string
+  ProjId: string
+  ACTIVITYNUMBER: string
+  [key: string]: string | number
+}
+
+function App() {
+  const [rawRows, setRawRows] = useState<RawRow[]>([])
+  const [fileMeta, setFileMeta] = useState('')
+  const [weekStart, setWeekStart] = useState<string | null>(null)
+  const [weekInfo, setWeekInfo] = useState<WeekInfo | null>(null)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null)
+  const [transformedRows, setTransformedRows] = useState<DynamicsRow[]>([])
+  const [viewMode, setViewMode] = useState<'simplified' | 'raw'>('simplified')
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (!file) return
 
     try {
@@ -40,16 +59,16 @@ function App() {
       setWarningMessage(warning)
       
       // Auto-select week
-      const dates = rows.map(r => parseDateCell(r.date, XLSX)).filter(Boolean)
+      const dates = rows.map(r => parseDateCell(r.date, XLSX)).filter((d): d is NonNullable<typeof d> => d !== null)
       if (dates.length) {
-        let initialWeek
+        let initialWeek: string
         if (hasCurrentWeek) {
           // Auto-select current week's Monday
           initialWeek = getCurrentWeekMonday()
         } else {
           // Fallback to minimum date in file
           const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b))
-          initialWeek = setWeekStartFromDate(min.format('YYYY-MM-DD'))
+          initialWeek = setWeekStartFromDate(min.format('YYYY-MM-DD')) || ''
         }
         setWeekStart(initialWeek)
         setWeekInfo(getWeekInfo(initialWeek))
@@ -60,12 +79,13 @@ function App() {
     }
   }
 
-  const handleWeekChange = (newWeekStart) => {
+  const handleWeekChange = (newWeekStart: string) => {
     setWeekStart(newWeekStart)
     setWeekInfo(getWeekInfo(newWeekStart))
   }
 
   const handleTransform = () => {
+    if (!weekStart) return
     const filtered = filterRowsToWeek(rawRows, weekStart, XLSX)
     const transformed = transformToDynamics(filtered, weekStart, XLSX)
     setTransformedRows(transformed)
@@ -85,7 +105,7 @@ function App() {
     }
   }
 
-  const handleViewModeChange = (mode) => {
+  const handleViewModeChange = (mode: 'simplified' | 'raw') => {
     setViewMode(mode)
   }
 

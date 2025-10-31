@@ -1,10 +1,23 @@
 import * as XLSX from 'xlsx'
 
+interface RawRow {
+  date: unknown
+  startTime: unknown
+  endTime: unknown
+}
+
+interface ReadFileResult {
+  workbook: XLSX.WorkBook
+  rawRows: RawRow[]
+  fileName: string
+  sheetName: string
+}
+
 /**
  * Read Excel/CSV file and extract time entry rows
  * Fixed columns: I (8), N (13), T (19). Data starts at row 13 (index 12).
  */
-export async function readFile(file) {
+export async function readFile(file: File): Promise<ReadFileResult> {
   const buffer = await file.arrayBuffer()
   const wb = XLSX.read(buffer, { type: 'array' })
   const firstSheetName = wb.SheetNames[0]
@@ -18,7 +31,7 @@ export async function readFile(file) {
   const COL_N = 13 // Inntid (Start time)
   const COL_T = 19 // Ut-tid (End time)
   
-  const rows = []
+  const rows: RawRow[] = []
   for (let r = startRow; r <= range.e.r; r++) {
     const dCell = ws[XLSX.utils.encode_cell({ r, c: COL_I })]
     const sCell = ws[XLSX.utils.encode_cell({ r, c: COL_N })]
@@ -48,8 +61,8 @@ export async function readFile(file) {
 /**
  * Export rows to CSV
  */
-export function exportCsv(rows, headers) {
-  const ws = XLSX.utils.json_to_sheet(rows, { header: headers })
+export function exportCsv(rows: Record<string, unknown>[], headers: readonly string[]): Blob {
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers as string[] })
   const csv = XLSX.utils.sheet_to_csv(ws)
   return new Blob([csv], { type: 'text/csv;charset=utf-8;' })
 }
@@ -57,8 +70,8 @@ export function exportCsv(rows, headers) {
 /**
  * Export rows to XLSX
  */
-export function exportXlsx(rows, headers) {
-  const ws = XLSX.utils.json_to_sheet(rows, { header: headers })
+export function exportXlsx(rows: Record<string, unknown>[], headers: readonly string[]): Blob {
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers as string[] })
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Import')
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
@@ -68,7 +81,7 @@ export function exportXlsx(rows, headers) {
 /**
  * Download a blob as a file
  */
-export function downloadBlob(blob, filename) {
+export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

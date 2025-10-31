@@ -1,16 +1,36 @@
-import dayjs from 'dayjs'
+import dayjs, { Dayjs } from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import * as XLSX from 'xlsx'
 
 dayjs.extend(isoWeek)
+
+interface WeekInfo {
+  weekNum: number
+  year: number
+}
+
+interface CheckCurrentWeekResult {
+  hasCurrentWeek: boolean
+  warningMessage: string | null
+}
+
+interface ParsedDateCode {
+  y: number
+  m: number
+  d: number
+  H?: number
+  M?: number
+  S?: number
+}
 
 /**
  * Parse a date cell value from Excel or string format
  * Handles Excel serial numbers, Norwegian DD.MM.YY format, and generic parse
  */
-export function parseDateCell(value, XLSX) {
+export function parseDateCell(value: unknown, XLSX: typeof import('xlsx')): Dayjs | null {
   // Handle Excel serial number
   if (typeof value === 'number') {
-    const jsDate = XLSX.SSF.parse_date_code(value)
+    const jsDate = XLSX.SSF.parse_date_code(value) as ParsedDateCode | undefined
     if (!jsDate) return null
     const d = dayjs(new Date(jsDate.y, jsDate.m - 1, jsDate.d))
     return d.isValid() ? d : null
@@ -41,14 +61,14 @@ export function parseDateCell(value, XLSX) {
   }
   
   // Fallback to generic parse
-  const d = dayjs(value)
+  const d = dayjs(value as string | Date)
   return d.isValid() ? d : null
 }
 
 /**
  * Set week start to Monday from any given date
  */
-export function setWeekStartFromDate(date) {
+export function setWeekStartFromDate(date: string): string | null {
   const d = dayjs(date)
   if (!d.isValid()) return null
   const monday = d.isoWeekday() === 1 ? d : d.isoWeekday(1)
@@ -58,7 +78,7 @@ export function setWeekStartFromDate(date) {
 /**
  * Get week info (week number and year) from a date
  */
-export function getWeekInfo(dateStr) {
+export function getWeekInfo(dateStr: string | null): WeekInfo | null {
   if (!dateStr) return null
   const d = dayjs(dateStr)
   if (!d.isValid()) return null
@@ -71,7 +91,7 @@ export function getWeekInfo(dateStr) {
 /**
  * Get current week's Monday
  */
-export function getCurrentWeekMonday() {
+export function getCurrentWeekMonday(): string {
   const today = dayjs()
   const monday = today.isoWeekday() === 1 ? today : today.isoWeekday(1)
   return monday.format('YYYY-MM-DD')
@@ -80,16 +100,27 @@ export function getCurrentWeekMonday() {
 /**
  * Check if a date falls within a week starting from weekStartIso
  */
-export function isDateInWeek(date, weekStartIso) {
+export function isDateInWeek(date: Dayjs, weekStartIso: string): boolean {
   const weekStart = dayjs(weekStartIso)
   const weekEnd = weekStart.add(7, 'day')
   return date.isSame(weekStart) || (date.isAfter(weekStart) && date.isBefore(weekEnd))
 }
 
+interface RawRow {
+  date: unknown
+  startTime: unknown
+  endTime: unknown
+}
+
+interface FilteredRow {
+  row: RawRow
+  date: Dayjs
+}
+
 /**
  * Filter rows to only include those within the specified week
  */
-export function filterRowsToWeek(rows, weekStartIso, XLSX) {
+export function filterRowsToWeek(rows: RawRow[], weekStartIso: string, XLSX: typeof import('xlsx')): FilteredRow[] {
   if (!weekStartIso) return []
   const start = dayjs(weekStartIso)
   const end = start.add(7, 'day')
@@ -99,7 +130,7 @@ export function filterRowsToWeek(rows, weekStartIso, XLSX) {
       const d = parseDateCell(r.date, XLSX)
       return d ? { row: r, date: d } : null
     })
-    .filter(Boolean)
+    .filter((item): item is FilteredRow => item !== null)
     .filter(({ date }) => date.isSame(start) || (date.isAfter(start) && date.isBefore(end)))
 }
 
@@ -107,9 +138,9 @@ export function filterRowsToWeek(rows, weekStartIso, XLSX) {
  * Check if the current week exists in the uploaded file
  * Returns { hasCurrentWeek: boolean, warningMessage: string | null }
  */
-export function checkCurrentWeekInFile(rawRows, XLSX) {
+export function checkCurrentWeekInFile(rawRows: RawRow[], XLSX: typeof import('xlsx')): CheckCurrentWeekResult {
   const currentMonday = getCurrentWeekMonday()
-  const dates = rawRows.map(r => parseDateCell(r.date, XLSX)).filter(Boolean)
+  const dates = rawRows.map(r => parseDateCell(r.date, XLSX)).filter((d): d is Dayjs => d !== null)
   
   if (!dates.length) {
     return { hasCurrentWeek: false, warningMessage: null }
@@ -126,7 +157,7 @@ export function checkCurrentWeekInFile(rawRows, XLSX) {
   }
   
   const weekInfo = getWeekInfo(currentMonday)
-  const warningMessage = `⚠️ Warning: The current week (${weekInfo.year}-W${String(weekInfo.weekNum).padStart(2, '0')}) is not present in the uploaded file. You may have chosen the wrong file.`
+  const warningMessage = `⚠️ Warning: The current week (${weekInfo?.year}-W${String(weekInfo?.weekNum).padStart(2, '0')}) is not present in the uploaded file. You may have chosen the wrong file.`
   
   return { hasCurrentWeek: false, warningMessage }
 }

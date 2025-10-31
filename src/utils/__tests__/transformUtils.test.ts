@@ -5,7 +5,7 @@ import { transformToDynamics, DYNAMICS_HEADERS, HOURS_COLS, COMMENT_COLS } from 
 // Mock XLSX for testing
 const mockXLSX = {
   SSF: {
-    parse_date_code: (value) => {
+    parse_date_code: (value: number) => {
       if (value >= 0 && value <= 1) {
         const totalMinutes = Math.round(value * 1440)
         return {
