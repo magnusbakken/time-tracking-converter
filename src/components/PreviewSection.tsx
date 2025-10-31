@@ -63,7 +63,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
                 val === 0 ? 'text-muted/40' : 'text-text'
               }`}
             >
-              {val > 0 ? val.toFixed(2) : '?'}
+              {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
           <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
@@ -79,7 +79,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
                 val === 0 ? 'text-muted/40' : 'text-text'
               }`}
             >
-              {val > 0 ? val.toFixed(2) : '?'}
+              {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
           <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
@@ -95,7 +95,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
                 val === 0 ? 'text-muted/40' : 'text-text'
               }`}
             >
-              {val > 0 ? val.toFixed(2) : '?'}
+              {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
           <td className="px-4 py-3 text-right font-bold border-t-2 border-accent/30 bg-[rgba(16,185,129,0.15)] text-accent">
