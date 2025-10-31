@@ -98,3 +98,12 @@ footer { margin-bottom: 32px; }
   margin-top: 8px;
 }
 
+.info-icon {
+  display: inline-block;
+  cursor: help;
+  color: var(--primary);
+  font-style: normal;
+  margin-left: 4px;
+  font-size: 0.95em;
+}
+

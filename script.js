@@ -55,17 +55,17 @@
 
   function updateWeekInfo() {
     if (!state.weekStartIso) {
-      weekInfo.textContent = '';
+      weekInfo.innerHTML = '';
       return;
     }
     const d = dayjs(state.weekStartIso);
     if (!d.isValid()) {
-      weekInfo.textContent = '';
+      weekInfo.innerHTML = '';
       return;
     }
     const weekNum = d.isoWeek();
     const year = d.isoWeekYear();
-    weekInfo.textContent = `ISO 8601 Week: ${year}-W${String(weekNum).padStart(2, '0')}`;
+    weekInfo.innerHTML = `Week ${weekNum}, ${year} <span class="info-icon" title="Week number follows the ISO 8601 standard">ⓘ</span>`;
   }
 
   function checkCurrentWeekInFile() {
