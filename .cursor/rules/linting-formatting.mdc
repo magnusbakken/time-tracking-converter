@@ -1,3 +1,12 @@
+---
+title: Linting and Formatting Guidelines
+description: ESLint and Prettier configuration and enforcement
+tags:
+  - linting
+  - formatting
+  - code-quality
+---
+
 # Linting and Formatting Guidelines
 
 ## Overview

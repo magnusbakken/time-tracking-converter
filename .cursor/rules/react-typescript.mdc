@@ -1,3 +1,15 @@
+---
+title: React & TypeScript Guidelines
+description: Best practices for React and TypeScript development
+tags:
+  - react
+  - typescript
+  - frontend
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+---
+
 # Framework & Language
 
 ## React Guidelines

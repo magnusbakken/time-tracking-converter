@@ -1,3 +1,16 @@
+---
+title: Styling Guidelines
+description: Tailwind CSS styling conventions
+tags:
+  - styling
+  - tailwind
+  - css
+globs:
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.tsx"
+---
+
 # Styling
 
 - Use Tailwind CSS for all styling

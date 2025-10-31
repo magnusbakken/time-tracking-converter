@@ -1,3 +1,12 @@
+---
+title: Package Management
+description: pnpm usage and dependency management guidelines
+tags:
+  - package-management
+  - pnpm
+  - dependencies
+---
+
 # Package Management
 
 - Use pnpm for all package management operations

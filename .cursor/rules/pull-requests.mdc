@@ -1,3 +1,12 @@
+---
+title: Pull Request Guidelines
+description: Best practices for creating and managing pull requests
+tags:
+  - pull-requests
+  - git
+  - workflow
+---
+
 # Pull Request Guidelines
 
 - Keep PRs small and focused on a single concern
