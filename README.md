@@ -3,10 +3,14 @@
 This project is a static site (plain `index.html`, `styles.css`, `script.js`). GitHub Actions workflows are included to publish it to GitHub Pages from the `main` branch and deploy PR previews.
 
 ### One-time repo setup
+
 1. Push this repository to GitHub.
-2. Create an empty `gh-pages` branch:
+
+2. **(Optional)** Pre-create the `gh-pages` branch:
    
-   **Option A: Use the initialization script (recommended)**
+   The workflows will automatically create the `gh-pages` branch on the first deployment if it doesn't exist. However, if you prefer to set it up manually first:
+   
+   **Option A: Use the initialization script**
    ```bash
    ./init-gh-pages.sh
    ```
@@ -25,7 +29,10 @@ This project is a static site (plain `index.html`, `styles.css`, `script.js`). G
    ```
 
 3. In your repository, go to Settings → Pages.
+
 4. Set Source to "Deploy from a branch" and select the `gh-pages` branch with `/ (root)` folder.
+   
+   **Note:** If the `gh-pages` branch hasn't been created yet, you'll need to wait for the first deployment to run (by pushing to `main` or opening a PR). After the first deployment, the branch will appear and you can configure it in Settings → Pages.
 
 ### How deployment works
 

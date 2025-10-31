@@ -21,12 +21,39 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
+
+      - name: Check if gh-pages branch exists
+        id: check-branch
+        run: |
+          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Checkout gh-pages branch
+        if: steps.check-branch.outputs.exists == 'true'
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: gh-pages
+
+      - name: Create gh-pages directory
+        if: steps.check-branch.outputs.exists == 'false'
+        run: |
+          mkdir -p gh-pages
+          cd gh-pages
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          echo "# GitHub Pages" > README.md
+          touch .nojekyll
+          mkdir -p pr
+          git add README.md .nojekyll
+          git commit -m "Initialize gh-pages branch"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Deploy to gh-pages
         run: |
@@ -48,7 +75,7 @@ jobs:
             echo "No changes to deploy"
           else
             git commit -m "Deploy main branch to GitHub Pages"
-            git push
-            echo "? Deployed to GitHub Pages"
+            git push -u origin gh-pages
+            echo "Deployed to GitHub Pages"
           fi
 
