@@ -1,5 +1,12 @@
 # Cursor Instructions
 
+## Package Management
+- Use pnpm for all package management operations
+- Run `pnpm install` to install dependencies
+- Run `pnpm add <package>` to add new dependencies
+- Run `pnpm remove <package>` to remove dependencies
+- Never use npm or yarn commands
+
 ## Framework & Language
 - Use React for all UI components and application logic
 - Use TypeScript for all code with strict type checking enabled

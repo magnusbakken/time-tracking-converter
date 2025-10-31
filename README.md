@@ -64,40 +64,70 @@ If you use a custom domain, configure it in Settings → Pages.
 
 ### Local development
 
+#### Prerequisites
+
+This project uses **pnpm** as its package manager. If you don't have pnpm installed, you can install it using one of these methods:
+
+**Using npm:**
+```bash
+npm install -g pnpm
+```
+
+**Using Homebrew (macOS):**
+```bash
+brew install pnpm
+```
+
+**Using Corepack (Node.js 16.13+):**
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+For other installation methods, visit [pnpm.io/installation](https://pnpm.io/installation)
+
+#### Why pnpm?
+
+This project uses pnpm instead of npm because:
+- **Faster**: Up to 2x faster than npm
+- **Disk efficient**: Uses a content-addressable store to save disk space
+- **Strict**: Creates a non-flat node_modules by default, preventing phantom dependencies
+
 #### Install dependencies
 ```bash
-npm install
+pnpm install
 ```
 
 #### Run development server
 ```bash
-npm run dev
+pnpm dev
 ```
 Then visit `http://localhost:5173`
 
 #### Run tests
 ```bash
-npm test
+pnpm test
 ```
 
 #### Build for production
 ```bash
-npm run build
+pnpm build
 ```
 
 #### Preview production build
 ```bash
-npm run preview
+pnpm preview
 ```
 
 ## Tech Stack
 
-- **React 19** - UI framework
+- **React 18** - UI framework
 - **TypeScript 5** - Type-safe JavaScript with strict mode enabled
 - **Vite** - Build tool and dev server
 - **Tailwind CSS 3** - Utility-first CSS framework
 - **Vitest** - Unit testing framework
 - **React Testing Library** - Component testing
+- **pnpm** - Fast, disk space efficient package manager
 - **dayjs** - Date manipulation
 - **xlsx** - Excel file reading/writing
 - **react-datepicker** - Date picker component
