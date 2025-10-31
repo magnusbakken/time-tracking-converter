@@ -21,27 +21,30 @@ This project enforces code quality and consistency through ESLint and Prettier. 
 ### TypeScript/JavaScript
 
 1. **Semicolons**: ALWAYS use explicit semicolons (no ASI - Automatic Semicolon Insertion)
+
    ```typescript
    // ✅ Correct
    const x = 5;
    console.log('hello');
 
    // ❌ Wrong
-   const x = 5
-   console.log('hello')
+   const x = 5;
+   console.log('hello');
    ```
 
 2. **Quotes**: Use single quotes for strings (unless escaping is needed)
+
    ```typescript
    // ✅ Correct
    const name = 'John';
    const message = "It's a great day";
 
    // ❌ Wrong
-   const name = "John";
+   const name = 'John';
    ```
 
 3. **Trailing Commas**: Use ES5-style trailing commas (arrays, objects, function parameters)
+
    ```typescript
    // ✅ Correct
    const obj = {
@@ -52,17 +55,18 @@ This project enforces code quality and consistency through ESLint and Prettier. 
    // ❌ Wrong
    const obj = {
      a: 1,
-     b: 2
+     b: 2,
    };
    ```
 
 4. **Arrow Functions**: Always use parentheses around arrow function parameters
+
    ```typescript
    // ✅ Correct
    const fn = (x) => x * 2;
 
    // ❌ Wrong
-   const fn = x => x * 2;
+   const fn = (x) => x * 2;
    ```
 
 5. **Line Width**: Maximum 100 characters per line
@@ -72,6 +76,7 @@ This project enforces code quality and consistency through ESLint and Prettier. 
 ### TypeScript-Specific
 
 1. **Type Definitions**: Prefer `interface` over `type` for object types
+
    ```typescript
    // ✅ Correct
    interface User {
@@ -87,6 +92,7 @@ This project enforces code quality and consistency through ESLint and Prettier. 
    ```
 
 2. **Unused Variables**: No unused variables allowed (prefix with `_` if intentionally unused)
+
    ```typescript
    // ✅ Correct
    function handleData(_error: Error, data: string) {
@@ -160,11 +166,13 @@ The build script automatically runs lint and format checks, so running `pnpm run
 When working with third-party libraries that have incomplete or unsafe types (like `xlsx`):
 
 1. Use type assertions when necessary:
+
    ```typescript
    const result = someUntypedFunction() as ExpectedType;
    ```
 
 2. Add targeted ESLint disable comments for specific unsafe operations:
+
    ```typescript
    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
    const value = untypedObject.property;
@@ -190,12 +198,7 @@ Add to your workspace settings (`.vscode/settings.json`):
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ]
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"]
 }
 ```
 
@@ -217,14 +220,14 @@ The build pipeline automatically enforces these checks:
 
 ## Quick Reference
 
-| Rule | Value | Reason |
-|------|-------|--------|
-| Semicolons | Required | Prevents ASI bugs, explicit code |
-| Quotes | Single | Consistency, less escaping in JSX |
-| Trailing Commas | ES5 | Cleaner diffs, easier to add lines |
-| Line Width | 100 | Balance between readability and screen space |
-| Indentation | 2 spaces | Standard for JavaScript/TypeScript |
-| Arrow Parens | Always | Consistency, easier to add parameters |
+| Rule            | Value    | Reason                                       |
+| --------------- | -------- | -------------------------------------------- |
+| Semicolons      | Required | Prevents ASI bugs, explicit code             |
+| Quotes          | Single   | Consistency, less escaping in JSX            |
+| Trailing Commas | ES5      | Cleaner diffs, easier to add lines           |
+| Line Width      | 100      | Balance between readability and screen space |
+| Indentation     | 2 spaces | Standard for JavaScript/TypeScript           |
+| Arrow Parens    | Always   | Consistency, easier to add parameters        |
 
 ## Troubleshooting
 
