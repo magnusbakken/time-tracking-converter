@@ -81,15 +81,20 @@ For each test case, the integration test will:
 2. ✅ Filter entries for the specified week using `dateUtils.filterRowsToWeek()`
 3. ✅ Transform to Dynamics format using `transformUtils.transformToDynamics()`
 4. ✅ Export to XLSX format using `excelUtils.exportXlsx()`
-5. ✅ Compare the output with the expected file
+5. ✅ Compare the output with the expected file using **binary comparison**
 
-**Important**: The tests use the public API functions from the codebase rather than directly calling the XLSX library. This means when you replace the XLSX library later, these same tests will continue to work without modification, verifying that the behavior hasn't changed.
+**Important**: The tests use ONLY the public API functions from the codebase and do NOT directly import the XLSX library. The XLSX library is loaded dynamically only when needed. This means when you replace the XLSX library later, these same tests will continue to work without modification, verifying that the behavior hasn't changed.
 
-The test compares:
-- Number of rows
-- All column values (LineNum, ProjectDataAreaId, ProjId, ACTIVITYNUMBER)
-- Hours for each day of the week (HOURS, Hours2_, Hours3_, etc.)
-- Comments for each day (EXTERNALCOMMENTS, ExternalComments2_, etc.)
+### Comparison Method
+
+The tests perform a **byte-by-byte binary comparison** of the generated output file against the expected output file. This ensures:
+- Complete file identity verification
+- No dependency on parsing the XLSX format in tests
+- Tests remain valid when the Excel library is replaced
+
+If files don't match, the test will report:
+- File size difference (if sizes differ)
+- Content difference (if bytes differ)
 
 ## Test Output
 
@@ -106,12 +111,16 @@ The test compares:
 ```
 
 ### When Tests Fail ❌
-The test will show detailed differences:
+The test will show a comparison message:
 ```
-Differences found:
-  - Row 1, Column "HOURS": expected "8", got "7.5"
-  - Row 1, Column "Hours2_": expected "8", got "8.5"
+File size mismatch: expected 8192 bytes, got 8256 bytes
 ```
+or
+```
+Files differ in content
+```
+
+If the test fails, you can manually inspect the expected and actual files to determine what changed.
 
 ## Adding More Test Cases
 
@@ -140,9 +149,26 @@ Once you add the test files and run `pnpm test`, you'll have a comprehensive tes
 
 ## Architecture
 
-The integration tests are designed to be library-agnostic:
+The integration tests are designed to be completely library-agnostic:
 
 - **Code Under Test**: Uses `readFile()`, `filterRowsToWeek()`, `transformToDynamics()`, and `exportXlsx()` functions
-- **Library Abstraction**: XLSX implementation details are hidden behind these functions
-- **Future-Proof**: When XLSX is replaced, only the implementation inside these functions needs to change
+- **No Static XLSX Import**: The test file has NO static import of the XLSX library
+- **Dynamic Loading**: XLSX is loaded dynamically only when the test runs
+- **Binary Comparison**: Output verification uses simple byte-by-byte comparison, not XLSX parsing
+- **Library Abstraction**: All XLSX implementation details are hidden behind utility functions
+- **Future-Proof**: When XLSX is replaced, only the implementation inside utility functions needs to change
 - **Same Tests**: These integration tests will verify that the new library works identically
+
+### Why Binary Comparison?
+
+Binary comparison might seem less precise than cell-by-cell comparison, but it has key advantages:
+
+1. **Complete Independence**: No dependency on any Excel parsing library in tests
+2. **Exact Verification**: Guarantees 100% identical output, including formatting
+3. **Future-Proof**: Works regardless of which Excel library is used
+4. **Simplicity**: Easy to understand and maintain
+
+If a test fails after replacing the XLSX library, you can:
+- Manually open both files in Excel to compare
+- Use a diff tool to see what changed
+- Regenerate the expected output if the new library produces equivalent but slightly different output

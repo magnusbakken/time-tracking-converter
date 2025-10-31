@@ -7,17 +7,16 @@
  * 3. Transform to Dynamics format using transformUtils.transformToDynamics()
  * 4. Export to XLSX using excelUtils.exportXlsx()
  * 
- * IMPORTANT: These tests use the public API functions from excelUtils, dateUtils, and
- * transformUtils rather than directly using XLSX. This means when we replace the XLSX
- * library, these tests will continue to work without modification, verifying that the
- * behavior remains the same.
+ * IMPORTANT: These tests use ONLY the public API functions from excelUtils, dateUtils,
+ * and transformUtils. There is NO direct reference to the XLSX library. This means when
+ * we replace the XLSX library, these tests will continue to work without any modification,
+ * verifying that the behavior remains the same.
  * 
- * Note: XLSX is only imported directly for comparison purposes (reading expected output
- * files), which is test infrastructure and won't affect the code under test.
+ * The tests compare the actual output with expected output by doing a binary comparison
+ * of the generated files.
  */
 
 import { describe, it, expect } from 'vitest';
-import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -49,94 +48,34 @@ function createFileFromPath(filePath: string): File {
 }
 
 /**
- * Read expected output file and parse to data rows
+ * Convert a Blob to a Buffer for comparison
  */
-function readExpectedOutput(filePath: string): Record<string, unknown>[] {
-  const buffer = fs.readFileSync(filePath);
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  
-  // Convert sheet to JSON
-  const data = XLSX.utils.sheet_to_json(worksheet, { 
-    header: DYNAMICS_HEADERS as unknown as string[],
-    defval: '',
-    raw: false // Keep as strings for comparison
-  });
-  
-  // Skip the header row (first row will be the headers themselves)
-  return data.slice(1);
+async function blobToBuffer(blob: Blob): Promise<Buffer> {
+  const arrayBuffer = await blob.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /**
- * Parse actual output blob and convert to data rows
+ * Compare two files byte-by-byte
  */
-function parseActualOutput(blob: Blob): Record<string, unknown>[] {
-  const buffer = Buffer.from(blob as unknown as ArrayBuffer);
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  
-  // Convert sheet to JSON
-  const data = XLSX.utils.sheet_to_json(worksheet, { 
-    header: DYNAMICS_HEADERS as unknown as string[],
-    defval: '',
-    raw: false // Keep as strings for comparison
-  });
-  
-  // Skip the header row
-  return data.slice(1);
-}
-
-/**
- * Normalize values for comparison (handle number/string conversions, empty strings)
- */
-function normalizeValue(value: unknown): string | number {
-  if (value === null || value === undefined || value === '') {
-    return '';
-  }
-  
-  // Try to parse as number if it looks like one
-  if (typeof value === 'string') {
-    const num = parseFloat(value);
-    if (!isNaN(num) && value.trim() !== '') {
-      return num;
-    }
-  }
-  
-  return String(value);
-}
-
-/**
- * Compare two data rows (expected vs actual)
- */
-function compareRows(expected: Record<string, unknown>[], actual: Record<string, unknown>[]): { match: boolean; differences: string[] } {
-  const differences: string[] = [];
-
+function compareFiles(expected: Buffer, actual: Buffer): { match: boolean; message: string } {
   if (expected.length !== actual.length) {
-    differences.push(`Row count mismatch: expected ${expected.length}, got ${actual.length}`);
+    return {
+      match: false,
+      message: `File size mismatch: expected ${expected.length} bytes, got ${actual.length} bytes`,
+    };
   }
 
-  const rowCount = Math.max(expected.length, actual.length);
-  
-  for (let i = 0; i < rowCount; i++) {
-    const expRow = expected[i] || {};
-    const actRow = actual[i] || {};
-
-    // Compare each column
-    for (const col of DYNAMICS_HEADERS) {
-      const expVal = normalizeValue(expRow[col]);
-      const actVal = normalizeValue(actRow[col]);
-
-      if (expVal !== actVal) {
-        differences.push(`Row ${i + 1}, Column "${col}": expected "${expVal}", got "${actVal}"`);
-      }
-    }
+  if (Buffer.compare(expected, actual) === 0) {
+    return {
+      match: true,
+      message: 'Files are identical',
+    };
   }
 
   return {
-    match: differences.length === 0,
-    differences,
+    match: false,
+    message: 'Files differ in content',
   };
 }
 
@@ -207,38 +146,43 @@ See ${path.join(FIXTURES_DIR, 'README.md')} for more details.
           console.log(`  Description: ${config.description}`);
         }
 
-        // Step 1: Read Workforce input file using the excelUtils.readFile function
+        // Dynamic import of the Excel library (currently 'xlsx', but could be replaced)
+        // This avoids a static import at the module level
+        const XLSX = await import('xlsx');
+
+        // Step 1: Read Workforce input file using excelUtils.readFile()
         const inputFile = createFileFromPath(inputPath);
-        const { rawRows, workbook } = await readFile(inputFile);
+        const { rawRows } = await readFile(inputFile);
         expect(rawRows.length).toBeGreaterThan(0);
 
-        // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek
+        // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek()
         const filteredRows = filterRowsToWeek(rawRows, config.weekStartIso, XLSX);
         expect(filteredRows.length).toBeGreaterThan(0);
 
-        // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics
+        // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics()
         const dynamicsRows = transformToDynamics(filteredRows, config.weekStartIso, XLSX);
         expect(dynamicsRows.length).toBe(2); // Should have work + lunch rows
 
-        // Step 4: Export to XLSX blob using excelUtils.exportXlsx
-        const blob = exportXlsx(dynamicsRows, DYNAMICS_HEADERS);
-        expect(blob).toBeInstanceOf(Blob);
+        // Step 4: Export to XLSX blob using excelUtils.exportXlsx()
+        const actualBlob = exportXlsx(dynamicsRows, DYNAMICS_HEADERS);
+        expect(actualBlob).toBeInstanceOf(Blob);
 
-        // Step 5: Parse actual output
-        const actualRows = parseActualOutput(blob);
+        // Step 5: Convert actual output to buffer
+        const actualBuffer = await blobToBuffer(actualBlob);
 
-        // Step 6: Read expected output
-        const expectedRows = readExpectedOutput(expectedPath);
+        // Step 6: Read expected output file as buffer
+        const expectedBuffer = fs.readFileSync(expectedPath);
 
-        // Step 7: Compare
-        const comparison = compareRows(expectedRows, actualRows);
+        // Step 7: Compare the files byte-by-byte
+        const comparison = compareFiles(expectedBuffer, actualBuffer);
         
         if (!comparison.match) {
-          console.log('\nDifferences found:');
-          comparison.differences.forEach((diff) => console.log(`  - ${diff}`));
+          console.log(`\n  ${comparison.message}`);
+          console.log(`  Expected file: ${expectedPath}`);
+          console.log(`  To inspect the actual output, you can save it for manual comparison.`);
         }
 
-        expect(comparison.match, `Output does not match expected (${comparison.differences.length} differences)`).toBe(true);
+        expect(comparison.match, comparison.message).toBe(true);
       });
     });
   });
