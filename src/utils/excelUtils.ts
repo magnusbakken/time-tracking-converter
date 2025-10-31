@@ -63,12 +63,7 @@ function parseExcelDate(value: unknown): Date | null {
       if (day > maxDay) return null;
 
       const date = new Date(year, month - 1, day);
-      if (isTest) {
-        console.warn(`  ? Parsed as ${date.toISOString()}`);
-      }
       return isNaN(date.getTime()) ? null : date;
-    } else if (isTest) {
-      console.warn(`  ? String didn't match DD.MM.YY pattern`);
     }
   }
 
