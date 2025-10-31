@@ -40,7 +40,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
   return (
     <>
       <thead>
-        <tr className="bg-[#1a2332]">
+        <tr className="bg-slate-800">
           {headers.map((h, i) => (
             <th
               key={i}
@@ -54,7 +54,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
         </tr>
       </thead>
       <tbody>
-        <tr className="hover:bg-[rgba(255,255,255,0.02)]">
+        <tr className="hover:bg-white/[0.02]">
           <td className="px-4 py-3 font-medium text-text border-b border-border">Invoiced</td>
           {workHours.map((val, i) => (
             <td
@@ -66,11 +66,11 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
               {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
-          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
+          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-emerald-500/[0.08] text-accent">
             {weeklyWorkTotal.toFixed(2)}
           </td>
         </tr>
-        <tr className="hover:bg-[rgba(255,255,255,0.02)]">
+        <tr className="hover:bg-white/[0.02]">
           <td className="px-4 py-3 font-medium text-text border-b border-border">Lunch</td>
           {lunchHours.map((val, i) => (
             <td
@@ -82,11 +82,11 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
               {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
-          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
+          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-emerald-500/[0.08] text-accent">
             {weeklyLunchTotal.toFixed(2)}
           </td>
         </tr>
-        <tr className="bg-[rgba(16,185,129,0.05)] hover:bg-[rgba(16,185,129,0.08)]">
+        <tr className="bg-emerald-500/[0.05] hover:bg-emerald-500/[0.08]">
           <td className="px-4 py-3 font-bold text-text border-t-2 border-accent/30">Total</td>
           {dailyTotals.map((val, i) => (
             <td
@@ -98,7 +98,7 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
               {val > 0 ? val.toFixed(2) : '—'}
             </td>
           ))}
-          <td className="px-4 py-3 text-right font-bold border-t-2 border-accent/30 bg-[rgba(16,185,129,0.15)] text-accent">
+          <td className="px-4 py-3 text-right font-bold border-t-2 border-accent/30 bg-emerald-500/15 text-accent">
             {weeklyGrandTotal.toFixed(2)}
           </td>
         </tr>
@@ -127,7 +127,7 @@ function RawPreview({ rows }: RawPreviewProps) {
   return (
     <>
       <thead>
-        <tr className="bg-[#1a2332]">
+        <tr className="bg-slate-800">
           {headers.map((h) => (
             <th
               key={h}
@@ -140,7 +140,7 @@ function RawPreview({ rows }: RawPreviewProps) {
       </thead>
       <tbody>
         {rows.map((r, idx) => (
-          <tr key={idx} className="hover:bg-[rgba(255,255,255,0.02)]">
+          <tr key={idx} className="hover:bg-white/[0.02]">
             {headers.map((h) => (
               <td key={h} className="px-4 py-3 text-text border-b border-border whitespace-nowrap">
                 {r[h]}
@@ -174,13 +174,13 @@ export default function PreviewSection({
     <section className="bg-panel border border-border rounded-[10px] p-4 my-4">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
         <h2 className="text-xl font-semibold m-0">4) Preview & Export</h2>
-        <div className="flex gap-0 bg-[#0f1520] border border-border rounded-lg p-1">
+        <div className="flex gap-0 bg-slate-900 border border-border rounded-lg p-1">
           <button
             onClick={() => onViewModeChange('simplified')}
             className={`px-4 py-1.5 text-sm transition-all duration-200 ${
               viewMode === 'simplified'
                 ? 'bg-blue-500 text-white opacity-100'
-                : 'bg-transparent text-muted hover:bg-[rgba(59,130,246,0.1)] hover:text-text'
+                : 'bg-transparent text-muted hover:bg-blue-500/10 hover:text-text'
             }`}
           >
             Summary
@@ -190,7 +190,7 @@ export default function PreviewSection({
             className={`px-4 py-1.5 text-sm transition-all duration-200 ${
               viewMode === 'raw'
                 ? 'bg-blue-500 text-white opacity-100'
-                : 'bg-transparent text-muted hover:bg-[rgba(59,130,246,0.1)] hover:text-text'
+                : 'bg-transparent text-muted hover:bg-blue-500/10 hover:text-text'
             }`}
           >
             Raw Export
