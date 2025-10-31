@@ -30,11 +30,6 @@ fixtures/
 
 ## 🎯 Key Design Decisions
 
-### Why NO Static XLSX Import?
-- Tests use `await import('xlsx')` dynamically inside the test function
-- No `import * as XLSX from 'xlsx'` at the module level
-- When you replace XLSX, just change package.json - tests don't need updates
-
 ### Why Binary Comparison?
 - Simple: Compare file bytes, not parsed cells
 - Independent: No dependency on XLSX for comparison
@@ -42,8 +37,9 @@ fixtures/
 - Exact: Guarantees 100% identical output
 
 ### Trade-offs
-- ✅ **Gain**: Tests work unchanged when XLSX is replaced
+- ✅ **Gain**: Tests work unchanged when the Excel library is replaced
 - ✅ **Gain**: No test dependency on Excel parsing libraries
+- ✅ **Gain**: Tests use only the public API functions
 - ⚠️ **Trade-off**: Less detailed diff when tests fail (shows "files differ" not "cell A1 differs")
 
 ## 📝 To Complete Setup
@@ -67,16 +63,18 @@ pnpm test excelUtils.integration.test.ts
 pnpm test:watch excelUtils.integration.test.ts
 ```
 
-## 🔄 When Replacing XLSX
+## 🔄 When Replacing the Excel Library
 
-1. Run tests with current XLSX → all pass ✅
-2. Replace XLSX library in package.json
-3. Update excelUtils.ts, dateUtils.ts, transformUtils.ts to use new library
+1. Run tests with current library → all pass ✅
+2. Replace xlsx library in package.json with new library
+3. Update only excelUtils.ts to use the new library
 4. Run THE SAME tests → verify all still pass ✅
 5. If tests fail with "files differ":
    - Manually compare the files in Excel
    - If output is equivalent, regenerate expected-output.xlsx files
    - If output is different, fix the implementation
+
+**Note**: Because the Excel library is fully encapsulated in excelUtils.ts, only that one file needs to be updated. All other code (App.tsx, dateUtils.ts, timeUtils.ts, transformUtils.ts) will work unchanged!
 
 ## 📊 Current Status
 
@@ -84,7 +82,8 @@ pnpm test:watch excelUtils.integration.test.ts
 - ✅ Test fixtures directories created
 - ✅ Config files with templates
 - ✅ Binary comparison implemented
-- ✅ No static XLSX dependencies in tests
+- ✅ Excel library fully encapsulated in excelUtils.ts
+- ✅ Tests use only public API functions (no direct library dependencies)
 - ⏳ Waiting for test files (workforce-input.xlsx, expected-output.xlsx)
 
-Once you add the test files, you'll have a robust test suite that ensures the Excel import/export functionality continues to work correctly when you replace the XLSX library!
+Once you add the test files, you'll have a robust test suite that ensures the Excel import/export functionality continues to work correctly when you replace the Excel library!
