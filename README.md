@@ -1,6 +1,6 @@
 ## Deploying to GitHub Pages
 
-This project is a static site (plain `index.html`, `styles.css`, `script.js`). GitHub Actions workflows are included to publish it to GitHub Pages from the `main` branch and deploy PR previews.
+This is a React application built with Vite and styled with Tailwind CSS. GitHub Actions workflows are included to build and publish the app to GitHub Pages from the `main` branch and deploy PR previews.
 
 ### One-time repo setup
 
@@ -38,7 +38,8 @@ This project is a static site (plain `index.html`, `styles.css`, `script.js`). G
 
 #### Main branch deployment
 - On every push to `main`, the workflow at `.github/workflows/deploy-pages.yml` runs.
-- It copies `index.html`, `styles.css`, and `script.js` to the root of the `gh-pages` branch.
+- It installs dependencies, runs tests, and builds the React app using Vite.
+- The built files from the `dist/` directory are copied to the root of the `gh-pages` branch.
 - A `.nojekyll` file ensures GitHub Pages serves files as-is.
 
 #### PR preview deployments
@@ -62,10 +63,40 @@ For example, if your repo is `magnusbakken/time-tracking-converter`:
 If you use a custom domain, configure it in Settings → Pages.
 
 ### Local development
-Open `index.html` directly in a browser or serve with a simple static server:
 
+#### Install dependencies
 ```bash
-python3 -m http.server 8080
+npm install
 ```
 
-Then visit `http://localhost:8080`.
+#### Run development server
+```bash
+npm run dev
+```
+Then visit `http://localhost:5173`
+
+#### Run tests
+```bash
+npm test
+```
+
+#### Build for production
+```bash
+npm run build
+```
+
+#### Preview production build
+```bash
+npm run preview
+```
+
+## Tech Stack
+
+- **React 19** - UI framework
+- **Vite** - Build tool and dev server
+- **Tailwind CSS 3** - Utility-first CSS framework
+- **Vitest** - Unit testing framework
+- **React Testing Library** - Component testing
+- **dayjs** - Date manipulation
+- **xlsx** - Excel file reading/writing
+- **react-datepicker** - Date picker component

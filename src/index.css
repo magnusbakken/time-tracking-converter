@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar for dark theme */
+@layer base {
+  * {
+    @apply box-border;
+  }
+  
+  html, body {
+    @apply h-full m-0 p-0;
+  }
+  
+  body {
+    @apply bg-bg text-text;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    @apply leading-normal;
+  }
+}
+
+/* React DatePicker custom styling for dark theme */
+.react-datepicker-wrapper {
+  @apply w-auto;
+}
+
+.react-datepicker {
+  @apply bg-panel border border-border rounded-lg font-sans;
+}
+
+.react-datepicker__header {
+  @apply bg-panel border-b border-border rounded-t-lg;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name,
+.react-datepicker-time__header {
+  @apply text-text;
+}
+
+.react-datepicker__day {
+  @apply text-text hover:bg-blue-500 hover:text-white rounded;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  @apply bg-blue-600 text-white;
+}
+
+.react-datepicker__day--disabled {
+  @apply text-muted opacity-50;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-text;
+}
+
+.react-datepicker__day--outside-month {
+  @apply text-muted;
+}

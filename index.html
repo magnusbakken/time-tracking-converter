@@ -1,68 +1,12 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Workforce ➜ Dynamics Time Import</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   </head>
   <body>
-    <header class="container">
-      <h1>Workforce ➜ Dynamics Time Import</h1>
-      <p class="subtitle">Convert exported Workforce timesheets to Dynamics import format</p>
-    </header>
-
-    <main class="container">
-      <section class="card" id="upload-section">
-        <h2>1) Upload Workforce Excel</h2>
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
-        <div id="fileMeta" class="muted"></div>
-      </section>
-
-      <section class="card" id="week-section">
-        <h2>2) Select Week</h2>
-        <div id="weekWarning" class="warning-text" style="display: none;"></div>
-        <div class="week-row">
-          <label for="weekStart">Week starting (Mon):</label>
-          <input type="text" id="weekStart" />
-        </div>
-        <div id="weekInfo" class="week-info-text"></div>
-      </section>
-
-      <section class="card" id="transform-section">
-        <h2>3) Transform</h2>
-        <button id="btnTransform" disabled>Transform to Dynamics format</button>
-      </section>
-
-      <section class="card" id="preview-section">
-        <div class="preview-header">
-          <h2>4) Preview & Export</h2>
-          <div class="view-toggle">
-            <button id="btnViewSimplified" class="toggle-btn active">Summary</button>
-            <button id="btnViewRaw" class="toggle-btn">Raw Export</button>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table id="previewTable"></table>
-        </div>
-        <div class="actions">
-          <button id="btnDownloadCsv" class="primary" disabled>Download CSV</button>
-          <button id="btnDownloadXlsx" disabled>Download XLSX</button>
-        </div>
-      </section>
-    </main>
-
-    <footer class="container muted">
-      <small>All processing happens in your browser. No data leaves your device.</small>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.min.js"></script>
-    <script>dayjs.extend(window.dayjs_plugin_isoWeek)</script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="script.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
-  </html>
-
+</html>

@@ -55,12 +55,25 @@ jobs:
           git commit -m "Initialize gh-pages branch"
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build React app
+        run: npm run build
+      
       - name: Deploy to gh-pages
         run: |
-          # Copy main site files to gh-pages root
-          cp index.html gh-pages/
-          cp styles.css gh-pages/
-          cp script.js gh-pages/
+          # Copy built files to gh-pages root
+          cp -r dist/* gh-pages/
           
           # Ensure .nojekyll exists for proper GitHub Pages serving
           touch gh-pages/.nojekyll
@@ -69,7 +82,7 @@ jobs:
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html styles.css script.js .nojekyll
+          git add .
           
           if git diff --staged --quiet; then
             echo "No changes to deploy"
