@@ -93,7 +93,7 @@ function App() {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="max-w-[1000px] mx-auto px-4 flex-1">
+      <main className="w-[1000px] mx-auto px-4 flex-1">
         <UploadSection onFileChange={handleFileChange} fileMeta={fileMeta} />
         
         <WeekSelector
