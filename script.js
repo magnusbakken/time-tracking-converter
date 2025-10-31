@@ -2,7 +2,8 @@
   const fileInput = document.getElementById('fileInput');
   const fileMetaEl = document.getElementById('fileMeta');
   const weekStartInput = document.getElementById('weekStart');
-  const btnAutofillWeek = document.getElementById('btnAutofillWeek');
+  const weekWarning = document.getElementById('weekWarning');
+  const weekInfo = document.getElementById('weekInfo');
   const btnTransform = document.getElementById('btnTransform');
   const previewTable = document.getElementById('previewTable');
   const btnDownloadCsv = document.getElementById('btnDownloadCsv');
@@ -49,6 +50,53 @@
     weekStartInput.value = monday.format('YYYY-MM-DD');
     state.weekStartIso = weekStartInput.value;
     if (weekPicker) weekPicker.setDate(state.weekStartIso, false);
+    updateWeekInfo();
+  }
+
+  function updateWeekInfo() {
+    if (!state.weekStartIso) {
+      weekInfo.textContent = '';
+      return;
+    }
+    const d = dayjs(state.weekStartIso);
+    if (!d.isValid()) {
+      weekInfo.textContent = '';
+      return;
+    }
+    const weekNum = d.isoWeek();
+    const year = d.isoWeekYear();
+    weekInfo.textContent = `ISO 8601 Week: ${year}-W${String(weekNum).padStart(2, '0')}`;
+  }
+
+  function checkCurrentWeekInFile() {
+    // Get current week's Monday
+    const today = dayjs();
+    const currentMonday = today.isoWeekday() === 1 ? today : today.isoWeekday(1);
+    const currentWeekStart = currentMonday.format('YYYY-MM-DD');
+    
+    // Check if current week exists in the uploaded file
+    const dates = state.rawRows.map(r => parseDateCell(r.date)).filter(Boolean);
+    if (!dates.length) {
+      weekWarning.style.display = 'none';
+      return false;
+    }
+    
+    const weekStart = dayjs(currentWeekStart);
+    const weekEnd = weekStart.add(7, 'day');
+    const hasCurrentWeek = dates.some(date => 
+      date.isSame(weekStart) || (date.isAfter(weekStart) && date.isBefore(weekEnd))
+    );
+    
+    if (hasCurrentWeek) {
+      weekWarning.style.display = 'none';
+      return true;
+    } else {
+      weekWarning.style.display = 'block';
+      const weekNum = currentMonday.isoWeek();
+      const year = currentMonday.isoWeekYear();
+      weekWarning.textContent = `⚠️ Warning: The current week (${year}-W${String(weekNum).padStart(2, '0')}) is not present in the uploaded file. You may have chosen the wrong file.`;
+      return false;
+    }
   }
 
   // No manual mapping needed; fixed columns are used
@@ -297,22 +345,26 @@
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     await readFile(file);
-    // Try to infer week from min date
+    
+    // Check if current week exists in file
+    const hasCurrentWeek = checkCurrentWeekInFile();
+    
+    // If current week exists, auto-select it; otherwise use the minimum date
     const dates = state.rawRows.map(r => parseDateCell(r.date)).filter(Boolean);
     if (dates.length) {
-      const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b));
-      setWeekStartFromDate(min.format('YYYY-MM-DD'));
+      if (hasCurrentWeek) {
+        // Auto-select current week's Monday
+        const today = dayjs();
+        const currentMonday = today.isoWeekday() === 1 ? today : today.isoWeekday(1);
+        setWeekStartFromDate(currentMonday.format('YYYY-MM-DD'));
+      } else {
+        // Fallback to minimum date in file
+        const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b));
+        setWeekStartFromDate(min.format('YYYY-MM-DD'));
+      }
     }
   });
 
-  btnAutofillWeek.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (!state.rawRows.length) return;
-    const dates = state.rawRows.map(r => parseDateCell(r.date)).filter(Boolean);
-    if (!dates.length) return;
-    const min = dates.reduce((a, b) => (a.isBefore(b) ? a : b));
-    setWeekStartFromDate(min.format('YYYY-MM-DD'));
-  });
 
   weekStartInput.addEventListener('change', () => {
     // Normalize any picked date to Monday to avoid off-by-one day shifts
@@ -320,6 +372,7 @@
       setWeekStartFromDate(weekStartInput.value);
     } else {
       state.weekStartIso = null;
+      updateWeekInfo();
     }
   });
 

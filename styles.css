@@ -83,3 +83,18 @@ th { background: #0f1520; position: sticky; top: 0; z-index: 1; }
 
 footer { margin-bottom: 32px; }
 
+.warning-text {
+  background: #78350f;
+  color: #fef3c7;
+  border: 1px solid #92400e;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.week-info-text {
+  color: var(--muted);
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
