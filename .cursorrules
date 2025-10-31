@@ -1,0 +1,90 @@
+# Cursor Project Rules
+
+## Commit Message Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages.
+
+### Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+
+- **feat**: A new feature (triggers MINOR version bump)
+- **fix**: A bug fix (triggers PATCH version bump)
+- **docs**: Documentation only changes
+- **style**: Changes that don't affect code meaning (formatting, white-space, etc.)
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **perf**: Performance improvement (triggers PATCH version bump)
+- **test**: Adding or modifying tests
+- **build**: Changes to build system or dependencies
+- **ci**: Changes to CI configuration files
+- **chore**: Other changes that don't modify src or test files
+
+### Breaking Changes
+
+For breaking changes that significantly alter app behavior (triggers MAJOR version bump):
+- Add `BREAKING CHANGE:` in the commit body, or
+- Add `!` after the type/scope: `feat!: change API endpoint structure`
+
+### Examples
+
+```
+feat(upload): add drag-and-drop file upload support
+
+fix(excel): correct date formatting in output file
+
+docs: update README with deployment instructions
+
+refactor(utils): simplify time calculation logic
+
+feat!: replace week selector with date range picker
+
+BREAKING CHANGE: The week selector component has been replaced with a more flexible date range picker. Existing URL parameters for week selection are no longer supported.
+```
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** (x.0.0): Breaking changes that significantly alter app behavior
+- **MINOR** (0.x.0): New features, backward-compatible functionality additions
+- **PATCH** (0.0.x): Bug fixes, performance improvements, small refinements
+
+### Version Bump Guidelines
+
+- **PATCH**: Bug fixes, typos, small improvements, performance optimizations
+- **MINOR**: New features, component additions, enhanced functionality
+- **MAJOR**: Breaking changes, major refactors, significant behavior changes
+
+## Changelog
+
+Update `CHANGELOG.md` when making changes:
+
+1. Add entries under `## [Unreleased]` section (create if doesn't exist)
+2. Categorize changes: Added, Changed, Deprecated, Removed, Fixed, Security
+3. When releasing, move Unreleased changes to new version section with date
+4. Keep the format consistent with [Keep a Changelog](https://keepachangelog.com/)
+
+### Example
+
+```markdown
+## [Unreleased]
+
+### Added
+- New feature description
+
+### Fixed
+- Bug fix description
+
+## [1.1.0] - 2025-11-01
+
+### Added
+- Feature that was added in this version
+```
