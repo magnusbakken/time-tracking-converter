@@ -16,7 +16,7 @@ export default function UploadSection({ onFileChange, fileMeta }: UploadSectionP
         id="fileInput"
         accept=".xlsx,.xls,.csv"
         onChange={handleChange}
-        className="bg-[#0f1520] text-text border border-border rounded-lg px-2.5 py-2"
+        className="bg-slate-900 text-text border border-border rounded-lg px-2.5 py-2"
       />
       {fileMeta && <div className="text-muted mt-2">{fileMeta}</div>}
     </section>

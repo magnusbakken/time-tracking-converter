@@ -45,7 +45,7 @@ export default function WeekSelector({
       <h2 className="text-xl font-semibold mb-4">2) Select Week</h2>
 
       {warningMessage && (
-        <div className="bg-[#78350f] text-[#fef3c7] border border-[#92400e] rounded-md px-3 py-2.5 mb-3">
+        <div className="bg-amber-900 text-amber-100 border border-amber-800 rounded-md px-3 py-2.5 mb-3">
           {warningMessage}
         </div>
       )}
@@ -58,7 +58,7 @@ export default function WeekSelector({
           onChange={handleDateChange}
           dateFormat="yyyy-MM-dd"
           calendarStartDay={1}
-          className="bg-[#0f1520] text-text border border-border rounded-lg px-2.5 py-2 w-[140px]"
+          className="bg-slate-900 text-text border border-border rounded-lg px-2.5 py-2 w-[140px]"
         />
       </div>
 
