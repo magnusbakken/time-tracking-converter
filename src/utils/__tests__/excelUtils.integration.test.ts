@@ -35,16 +35,30 @@ interface TestConfig {
 }
 
 /**
- * Create a File object from a filesystem path (for testing)
+ * Create a File-like object from a filesystem path (for testing).
+ * In Node.js environment, we need to add the arrayBuffer() method manually.
  */
 function createFileFromPath(filePath: string): File {
   const buffer = fs.readFileSync(filePath);
   const fileName = path.basename(filePath);
-  return new File([buffer], fileName, {
+  const file = new File([buffer], fileName, {
     type: filePath.endsWith('.xlsx')
       ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       : 'application/vnd.ms-excel',
   });
+
+  // In Node.js/jsdom, File.prototype.arrayBuffer might not be implemented
+  // Add it if it's missing
+  if (!file.arrayBuffer) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    (file as any).arrayBuffer = () => {
+      return Promise.resolve(
+        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+      );
+    };
+  }
+
+  return file;
 }
 
 /**
@@ -158,9 +172,39 @@ describe('Excel Import/Export Integration Tests', () => {
         const { rows } = await readFile(inputFile);
         expect(rows.length).toBeGreaterThan(0);
 
+        // Debug: Check what dates were parsed and what was in the raw data
+        const rowsWithDates = rows.filter((r) => r.date);
+        const rowsWithoutDates = rows.filter((r) => !r.date);
+        const parsedDates = rowsWithDates
+          .map((r) => r.date?.toISOString().split('T')[0])
+          .filter((d): d is string => d !== undefined);
+        const uniqueDates = [...new Set(parsedDates)].sort();
+
         // Step 2: Filter rows for the specified week using dateUtils.filterRowsToWeek()
         // No XLSX dependency - dates are already parsed as Date objects
         const filteredRows = filterRowsToWeek(rows, config.weekStartIso);
+
+        if (filteredRows.length === 0) {
+          const debugInfo = [
+            `No rows found for week starting ${config.weekStartIso}.`,
+            `Total rows read: ${rows.length}`,
+            `Rows with valid dates: ${rowsWithDates.length}`,
+            `Rows with null dates: ${rowsWithoutDates.length}`,
+            `Parsed dates: ${uniqueDates.length > 0 ? uniqueDates.join(', ') : 'none'}`,
+            ``,
+            `First few rows:`,
+            ...rows
+              .slice(0, 3)
+              .map(
+                (r, i) =>
+                  `  Row ${i + 1}: date=${r.date ? r.date.toISOString() : 'null'}, ` +
+                  `start=${r.startTimeMinutes}, end=${r.endTimeMinutes}`
+              ),
+          ].join('\n');
+
+          throw new Error(debugInfo);
+        }
+
         expect(filteredRows.length).toBeGreaterThan(0);
 
         // Step 3: Transform to Dynamics format using transformUtils.transformToDynamics()

@@ -1,4 +1,0 @@
-# Place your test files here:
-# 1. workforce-input.xlsx (or .xls) - The Workforce timesheet input
-# 2. expected-output.xlsx - The expected Dynamics output
-# 3. config.json - Already created with template
