@@ -40,46 +40,64 @@ function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
   return (
     <>
       <thead>
-        <tr>
+        <tr className="bg-[#1a2332]">
           {headers.map((h, i) => (
-            <th key={i}>{h}</th>
+            <th
+              key={i}
+              className="text-left px-4 py-3 font-semibold text-text border-b-2 border-border"
+            >
+              {h}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>
-            <strong>Invoiced</strong>
-          </td>
+        <tr className="hover:bg-[rgba(255,255,255,0.02)]">
+          <td className="px-4 py-3 font-medium text-text border-b border-border">Invoiced</td>
           {workHours.map((val, i) => (
-            <td key={i}>{val > 0 ? val.toFixed(2) : ''}</td>
-          ))}
-          <td className="bg-[rgba(59,130,246,0.05)]">
-            <strong>{weeklyWorkTotal.toFixed(2)}</strong>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <strong>Lunch</strong>
-          </td>
-          {lunchHours.map((val, i) => (
-            <td key={i}>{val > 0 ? val.toFixed(2) : ''}</td>
-          ))}
-          <td className="bg-[rgba(59,130,246,0.05)]">
-            <strong>{weeklyLunchTotal.toFixed(2)}</strong>
-          </td>
-        </tr>
-        <tr>
-          <td className="border-t-2 border-border pt-3">
-            <strong>Total</strong>
-          </td>
-          {dailyTotals.map((val, i) => (
-            <td key={i} className="bg-[rgba(59,130,246,0.05)] border-t-2 border-border pt-3">
-              <strong>{val > 0 ? val.toFixed(2) : ''}</strong>
+            <td
+              key={i}
+              className={`px-4 py-3 text-right border-b border-border ${
+                val === 0 ? 'text-muted/40' : 'text-text'
+              }`}
+            >
+              {val > 0 ? val.toFixed(2) : '?'}
             </td>
           ))}
-          <td className="bg-[rgba(59,130,246,0.15)] border-t-2 border-border pt-3">
-            <strong>{weeklyGrandTotal.toFixed(2)}</strong>
+          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
+            {weeklyWorkTotal.toFixed(2)}
+          </td>
+        </tr>
+        <tr className="hover:bg-[rgba(255,255,255,0.02)]">
+          <td className="px-4 py-3 font-medium text-text border-b border-border">Lunch</td>
+          {lunchHours.map((val, i) => (
+            <td
+              key={i}
+              className={`px-4 py-3 text-right border-b border-border ${
+                val === 0 ? 'text-muted/40' : 'text-text'
+              }`}
+            >
+              {val > 0 ? val.toFixed(2) : '?'}
+            </td>
+          ))}
+          <td className="px-4 py-3 text-right font-semibold border-b border-border bg-[rgba(16,185,129,0.08)] text-accent">
+            {weeklyLunchTotal.toFixed(2)}
+          </td>
+        </tr>
+        <tr className="bg-[rgba(16,185,129,0.05)] hover:bg-[rgba(16,185,129,0.08)]">
+          <td className="px-4 py-3 font-bold text-text border-t-2 border-accent/30">Total</td>
+          {dailyTotals.map((val, i) => (
+            <td
+              key={i}
+              className={`px-4 py-3 text-right font-semibold border-t-2 border-accent/30 ${
+                val === 0 ? 'text-muted/40' : 'text-text'
+              }`}
+            >
+              {val > 0 ? val.toFixed(2) : '?'}
+            </td>
+          ))}
+          <td className="px-4 py-3 text-right font-bold border-t-2 border-accent/30 bg-[rgba(16,185,129,0.15)] text-accent">
+            {weeklyGrandTotal.toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -107,17 +125,24 @@ function RawPreview({ rows }: RawPreviewProps) {
   return (
     <>
       <thead>
-        <tr>
+        <tr className="bg-[#1a2332]">
           {headers.map((h) => (
-            <th key={h}>{h}</th>
+            <th
+              key={h}
+              className="text-left px-4 py-3 font-semibold text-text border-b-2 border-border whitespace-nowrap"
+            >
+              {h}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody>
         {rows.map((r, idx) => (
-          <tr key={idx}>
+          <tr key={idx} className="hover:bg-[rgba(255,255,255,0.02)]">
             {headers.map((h) => (
-              <td key={h}>{r[h]}</td>
+              <td key={h} className="px-4 py-3 text-text border-b border-border whitespace-nowrap">
+                {r[h]}
+              </td>
             ))}
           </tr>
         ))}
