@@ -64,6 +64,35 @@ If you use a custom domain, configure it in Settings → Pages.
 
 ### Local development
 
+#### Prerequisites
+
+This project uses **pnpm** as its package manager. If you don't have pnpm installed, you can install it using one of these methods:
+
+**Using npm:**
+```bash
+npm install -g pnpm
+```
+
+**Using Homebrew (macOS):**
+```bash
+brew install pnpm
+```
+
+**Using Corepack (Node.js 16.13+):**
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+For other installation methods, visit [pnpm.io/installation](https://pnpm.io/installation)
+
+#### Why pnpm?
+
+This project uses pnpm instead of npm because:
+- **Faster**: Up to 2x faster than npm
+- **Disk efficient**: Uses a content-addressable store to save disk space
+- **Strict**: Creates a non-flat node_modules by default, preventing phantom dependencies
+
 #### Install dependencies
 ```bash
 pnpm install
