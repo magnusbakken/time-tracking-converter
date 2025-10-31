@@ -7,7 +7,19 @@ import prettier from 'eslint-plugin-prettier';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage', '*.config.js', '*.config.cjs', '*.config.ts'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      'coverage',
+      'gh-pages',
+      'build',
+      'public/build',
+      '*.config.js',
+      '*.config.cjs',
+      '*.config.ts',
+    ],
+  },
   {
     extends: [
       js.configs.recommended,
