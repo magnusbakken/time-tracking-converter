@@ -10,6 +10,11 @@ updates:
       day: "monday"
       time: "03:00"
       timezone: "UTC"
+    # 1-day cooldown for version updates to avoid recently compromised packages
+    # (does not apply to security updates)
+    cooldown:
+      duration: 1
+      unit: "days"
     # Allow multiple PRs for security updates (handled separately from version updates)
     open-pull-requests-limit: 10
     # Group all version updates into a single monthly PR
