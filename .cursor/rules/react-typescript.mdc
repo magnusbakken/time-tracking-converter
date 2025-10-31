@@ -1,0 +1,29 @@
+---
+title: Framework & Language
+description: React and TypeScript development guidelines
+alwaysApply: false
+globs:
+  - "**/*.{ts,tsx}"
+---
+
+# Framework & Language
+
+## React
+
+- Use React for all UI components and application logic
+- Use functional components with hooks
+- Follow naming conventions: PascalCase for components, camelCase for functions
+- Always define interfaces for component props
+- Properly manage component state and side effects
+- Implement proper component composition and reusability
+
+## TypeScript
+
+- Use TypeScript with strict type checking enabled
+- Define explicit types for all function parameters and return values
+- Prefer `interface` over `type` for object types
+- Use type guards and discriminated unions where appropriate
+- Avoid `any` - use `unknown` with type guards instead
+- Use readonly modifiers for immutable data
+- Leverage utility types (Pick, Omit, Partial, etc.) when appropriate
+- Keep type definitions close to usage, or in shared type files for reusable types
