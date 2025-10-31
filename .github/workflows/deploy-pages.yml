@@ -59,48 +59,48 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Run tests
         run: pnpm test
-      
+
       - name: Build React app
         run: pnpm build
-      
+
       - name: Deploy to gh-pages
         run: |
           # Copy built files to gh-pages root
           cp -r dist/* gh-pages/
-          
+
           # Ensure .nojekyll exists for proper GitHub Pages serving
           touch gh-pages/.nojekyll
-          
+
           # Commit and push
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Ensure we have the latest remote changes
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git fetch origin gh-pages
           git reset --hard origin/gh-pages
-          
+
           # Copy built files again after reset
           cd ..
           cp -r dist/* gh-pages/
           touch gh-pages/.nojekyll
           cd gh-pages
-          
+
           git add .
-          
+
           if git diff --staged --quiet; then
             echo "No changes to deploy"
           else
@@ -108,4 +108,3 @@ jobs:
             git push origin gh-pages
             echo "Deployed to GitHub Pages"
           fi
-

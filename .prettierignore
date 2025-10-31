@@ -1,0 +1,9 @@
+dist
+node_modules
+coverage
+gh-pages
+pnpm-lock.yaml
+*.min.js
+*.min.css
+build
+public/build
