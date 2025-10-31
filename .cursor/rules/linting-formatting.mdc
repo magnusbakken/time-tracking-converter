@@ -1,0 +1,39 @@
+---
+title: Linting and Formatting Guidelines
+description: Code quality standards enforced through ESLint and Prettier
+alwaysApply: true
+---
+
+# Linting and Formatting Guidelines
+
+All code must pass ESLint and Prettier checks before being merged.
+
+## Code Style
+
+- **Semicolons**: Always explicit (no ASI)
+- **Quotes**: Single quotes (double only when escaping)
+- **Trailing Commas**: ES5-style
+- **Arrow Functions**: Always use parentheses around parameters
+- **Line Width**: 100 characters max
+- **Indentation**: 2 spaces
+- **Types**: Prefer `interface` over `type` for object types
+- **Unused Variables**: Not allowed (prefix with `_` if intentionally unused)
+- **Console**: `console.warn`/`console.error` allowed; `console.log` triggers warning
+- **React**: Use new JSX transform (no React in scope), no prop-types (TypeScript), follow Hooks rules
+
+## Key Scripts
+
+```bash
+pnpm run lint          # Auto-fix linting issues
+pnpm run format        # Auto-format all files
+pnpm run typecheck     # TypeScript compiler checks
+pnpm run build         # Lint, format check, and build
+```
+
+## Third-Party Library Types
+
+For libraries with incomplete types (e.g., `xlsx`):
+- Use type assertions: `const result = fn() as ExpectedType;`
+- Add targeted ESLint disable comments with explanation
+
+**Build Enforcement**: `pnpm run build` enforces linting and formatting checks. PRs failing these checks will not be merged.

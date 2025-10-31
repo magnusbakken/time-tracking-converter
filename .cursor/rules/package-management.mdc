@@ -1,0 +1,14 @@
+---
+title: Package Management
+description: Use pnpm for all package management operations
+alwaysApply: true
+---
+
+# Package Management
+
+- Use pnpm for all package management operations
+- Run `pnpm install`, `pnpm add <package>`, `pnpm remove <package>`
+- Never use npm or yarn commands
+- **Always use the latest stable versions** unless there's a specific reason not to
+- When upgrading major versions, review changelog for breaking changes
+- Keep dependencies up to date for bug fixes, performance, and security patches

@@ -1,3 +1,12 @@
+---
+title: Testing
+description: Testing guidelines and best practices
+alwaysApply: false
+globs:
+  - "**/*.{test,spec}.{ts,tsx,js,jsx}"
+  - "**/__tests__/**"
+---
+
 # Testing
 
 - Write unit tests for all business logic
