@@ -83,6 +83,60 @@ th { background: #0f1520; position: sticky; top: 0; z-index: 1; }
 
 footer { margin-bottom: 32px; }
 
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.preview-header h2 {
+  margin: 0;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0;
+  background: #0f1520;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.toggle-btn {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover:not(.active) {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--text);
+}
+
+.toggle-btn.active {
+  background: var(--primary);
+  color: white;
+  opacity: 1;
+}
+
+.total-row td {
+  border-top: 2px solid var(--border);
+  padding-top: 12px;
+}
+
+.total-cell {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.grand-total {
+  background: rgba(59, 130, 246, 0.15);
+}
+
 .warning-text {
   background: #78350f;
   color: #fef3c7;

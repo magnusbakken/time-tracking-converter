@@ -8,6 +8,8 @@
   const previewTable = document.getElementById('previewTable');
   const btnDownloadCsv = document.getElementById('btnDownloadCsv');
   const btnDownloadXlsx = document.getElementById('btnDownloadXlsx');
+  const btnViewSimplified = document.getElementById('btnViewSimplified');
+  const btnViewRaw = document.getElementById('btnViewRaw');
 
   /**
    * App state retained in-memory
@@ -17,6 +19,7 @@
     rawRows: [], // Parsed from fixed columns: I (date), N (start), T (end)
     weekStartIso: null, // yyyy-mm-dd string (Mon)
     transformedRows: [],
+    viewMode: 'simplified', // 'simplified' or 'raw'
   };
 
   // Dynamics column definitions and explicit header order
@@ -300,6 +303,74 @@
     return [row1, row2];
   }
 
+  function renderSimplifiedPreview(rows) {
+    if (!rows.length) {
+      previewTable.innerHTML = '<tbody><tr><td class="muted">No rows</td></tr></tbody>';
+      return;
+    }
+
+    // Days of the week labels
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Extract hours from the two rows (work and lunch)
+    const workRow = rows[0];
+    const lunchRow = rows[1];
+    
+    // Calculate daily and weekly totals
+    const workHours = HOURS_COLS.map(col => Number(workRow[col]) || 0);
+    const lunchHours = HOURS_COLS.map(col => Number(lunchRow[col]) || 0);
+    const dailyTotals = workHours.map((h, i) => h + lunchHours[i]);
+    
+    const weeklyWorkTotal = workHours.reduce((sum, h) => sum + h, 0);
+    const weeklyLunchTotal = lunchHours.reduce((sum, h) => sum + h, 0);
+    const weeklyGrandTotal = weeklyWorkTotal + weeklyLunchTotal;
+    
+    // Build table header
+    const headers = ['', ...dayLabels, 'Week Total'];
+    const thead = '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+    
+    // Build table body
+    let tbody = '<tbody>';
+    
+    // Row 1: Invoiced hours
+    tbody += '<tr><td><strong>Invoiced</strong></td>';
+    for (let i = 0; i < 7; i++) {
+      const val = workHours[i] > 0 ? workHours[i].toFixed(2) : '';
+      tbody += `<td>${escapeHtml(val)}</td>`;
+    }
+    tbody += `<td class="total-cell"><strong>${weeklyWorkTotal.toFixed(2)}</strong></td></tr>`;
+    
+    // Row 2: Lunch hours
+    tbody += '<tr><td><strong>Lunch</strong></td>';
+    for (let i = 0; i < 7; i++) {
+      const val = lunchHours[i] > 0 ? lunchHours[i].toFixed(2) : '';
+      tbody += `<td>${escapeHtml(val)}</td>`;
+    }
+    tbody += `<td class="total-cell"><strong>${weeklyLunchTotal.toFixed(2)}</strong></td></tr>`;
+    
+    // Row 3: Total hours
+    tbody += '<tr class="total-row"><td><strong>Total</strong></td>';
+    for (let i = 0; i < 7; i++) {
+      const val = dailyTotals[i] > 0 ? dailyTotals[i].toFixed(2) : '';
+      tbody += `<td class="total-cell"><strong>${escapeHtml(val)}</strong></td>`;
+    }
+    tbody += `<td class="total-cell grand-total"><strong>${weeklyGrandTotal.toFixed(2)}</strong></td></tr>`;
+    
+    tbody += '</tbody>';
+    previewTable.innerHTML = thead + tbody;
+  }
+
+  function renderRawPreview(rows) {
+    if (!rows.length) {
+      previewTable.innerHTML = '<tbody><tr><td class="muted">No rows</td></tr></tbody>';
+      return;
+    }
+    const headers = DYNAMICS_HEADERS.filter(h => h in rows[0]);
+    const thead = '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+    const tbody = '<tbody>' + rows.map(r => '<tr>' + headers.map(h => `<td>${escapeHtml(r[h])}</td>`).join('') + '</tr>').join('') + '</tbody>';
+    previewTable.innerHTML = thead + tbody;
+  }
+
   function renderPreview(rows) {
     if (!rows.length) {
       previewTable.innerHTML = '<tbody><tr><td class="muted">No rows</td></tr></tbody>';
@@ -307,10 +378,13 @@
       btnDownloadXlsx.disabled = true;
       return;
     }
-    const headers = DYNAMICS_HEADERS.filter(h => h in rows[0]);
-    const thead = '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
-    const tbody = '<tbody>' + rows.map(r => '<tr>' + headers.map(h => `<td>${escapeHtml(r[h])}</td>`).join('') + '</tr>').join('') + '</tbody>';
-    previewTable.innerHTML = thead + tbody;
+    
+    if (state.viewMode === 'simplified') {
+      renderSimplifiedPreview(rows);
+    } else {
+      renderRawPreview(rows);
+    }
+    
     btnDownloadCsv.disabled = false;
     btnDownloadXlsx.disabled = false;
   }
@@ -388,6 +462,20 @@
   });
   btnDownloadXlsx.addEventListener('click', () => {
     if (state.transformedRows.length) exportXlsx(state.transformedRows);
+  });
+
+  btnViewSimplified.addEventListener('click', () => {
+    state.viewMode = 'simplified';
+    btnViewSimplified.classList.add('active');
+    btnViewRaw.classList.remove('active');
+    if (state.transformedRows.length) renderPreview(state.transformedRows);
+  });
+
+  btnViewRaw.addEventListener('click', () => {
+    state.viewMode = 'raw';
+    btnViewRaw.classList.add('active');
+    btnViewSimplified.classList.remove('active');
+    if (state.transformedRows.length) renderPreview(state.transformedRows);
   });
 })();
 
