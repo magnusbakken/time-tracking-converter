@@ -1,0 +1,8 @@
+# Testing
+
+- Write unit tests for all business logic
+- Use industry-standard testing libraries (Jest, React Testing Library, Vitest, etc.)
+- Ensure tests are executed on every build
+- Aim for meaningful test coverage of critical business logic
+- Write tests that are maintainable and easy to understand
+- Test behavior, not implementation details
