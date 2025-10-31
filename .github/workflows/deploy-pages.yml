@@ -7,44 +7,75 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-deploy
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Prepare artifact
-        run: |
-          mkdir -p ./dist
-          cp -r index.html styles.css script.js ./dist/
-          # Include .nojekyll if present
-          if [ -f .nojekyll ]; then cp .nojekyll ./dist/; fi
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
   deploy:
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check if gh-pages branch exists
+        id: check-branch
+        run: |
+          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout gh-pages branch
+        if: steps.check-branch.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Create gh-pages directory
+        if: steps.check-branch.outputs.exists == 'false'
+        run: |
+          mkdir -p gh-pages
+          cd gh-pages
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          echo "# GitHub Pages" > README.md
+          touch .nojekyll
+          mkdir -p pr
+          git add README.md .nojekyll
+          git commit -m "Initialize gh-pages branch"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Deploy to gh-pages
+        run: |
+          # Copy main site files to gh-pages root
+          cp index.html gh-pages/
+          cp styles.css gh-pages/
+          cp script.js gh-pages/
+          
+          # Ensure .nojekyll exists for proper GitHub Pages serving
+          touch gh-pages/.nojekyll
+          
+          # Commit and push
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html styles.css script.js .nojekyll
+          
+          if git diff --staged --quiet; then
+            echo "No changes to deploy"
+          else
+            git commit -m "Deploy main branch to GitHub Pages"
+            git push -u origin gh-pages
+            echo "Deployed to GitHub Pages"
+          fi
 

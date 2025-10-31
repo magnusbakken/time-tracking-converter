@@ -1,0 +1,158 @@
+name: Deploy PR Preview to GitHub Pages
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    # Only run if PR is not a draft (ready for review) or if it's being closed
+    if: github.event.pull_request.draft == false || github.event.action == 'closed'
+    
+    steps:
+      - name: Checkout PR branch
+        if: github.event.action != 'closed'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Checkout repository for branch check
+        if: github.event.action == 'closed'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if gh-pages branch exists
+        id: check-branch
+        run: |
+          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout gh-pages branch
+        if: steps.check-branch.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Create gh-pages directory
+        if: steps.check-branch.outputs.exists == 'false'
+        run: |
+          mkdir -p gh-pages
+          cd gh-pages
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          echo "# GitHub Pages" > README.md
+          touch .nojekyll
+          mkdir -p pr
+          git add README.md .nojekyll
+          git commit -m "Initialize gh-pages branch"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Remove PR preview (on close)
+        if: github.event.action == 'closed' && steps.check-branch.outputs.exists == 'true'
+        run: |
+          cd gh-pages
+          if [ -d "pr/${{ github.event.pull_request.number }}" ]; then
+            git rm -rf "pr/${{ github.event.pull_request.number }}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "Remove PR #${{ github.event.pull_request.number }} preview"
+            git push
+            echo "Removed preview for PR #${{ github.event.pull_request.number }}"
+          else
+            echo "No preview found for PR #${{ github.event.pull_request.number }}"
+          fi
+
+      - name: Build and deploy PR preview
+        if: github.event.action != 'closed'
+        run: |
+          # Create preview directory
+          mkdir -p gh-pages/pr/${{ github.event.pull_request.number }}
+          
+          # Copy static files to preview directory
+          cp index.html gh-pages/pr/${{ github.event.pull_request.number }}/
+          cp styles.css gh-pages/pr/${{ github.event.pull_request.number }}/
+          cp script.js gh-pages/pr/${{ github.event.pull_request.number }}/
+          
+          # Commit and push to gh-pages
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pr/${{ github.event.pull_request.number }}
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Deploy preview for PR #${{ github.event.pull_request.number }}"
+            git push -u origin gh-pages
+          fi
+
+      - name: Comment on PR with preview URL
+        if: github.event.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const repo = context.repo;
+            const previewUrl = `https://${repo.owner}.github.io/${repo.repo}/pr/${prNumber}/`;
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: repo.owner,
+              repo: repo.repo,
+              issue_number: prNumber,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Preview deployment')
+            );
+            
+            const commentBody = `## 🚀 Preview deployment ready!
+            
+            Your changes are deployed at: ${previewUrl}
+            
+            This preview will be automatically updated with each commit and removed when the PR is closed.`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                comment_id: botComment.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: prNumber,
+                body: commentBody,
+              });
+            }
+
+      - name: Comment on PR about cleanup
+        if: github.event.action == 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const repo = context.repo;
+            
+            await github.rest.issues.createComment({
+              owner: repo.owner,
+              repo: repo.repo,
+              issue_number: prNumber,
+              body: `## 🧹 Preview deployment removed\n\nThe preview deployment for this PR has been cleaned up.`,
+            });
