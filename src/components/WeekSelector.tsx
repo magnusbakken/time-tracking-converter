@@ -3,8 +3,20 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import dayjs from 'dayjs'
 
-export default function WeekSelector({ weekStart, onWeekChange, weekInfo, warningMessage }) {
-  const [selectedDate, setSelectedDate] = useState(null)
+interface WeekInfo {
+  weekNum: number
+  year: number
+}
+
+interface WeekSelectorProps {
+  weekStart: string | null
+  onWeekChange: (weekStart: string) => void
+  weekInfo: WeekInfo | null
+  warningMessage: string | null
+}
+
+export default function WeekSelector({ weekStart, onWeekChange, weekInfo, warningMessage }: WeekSelectorProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   useEffect(() => {
     if (weekStart) {
@@ -12,7 +24,7 @@ export default function WeekSelector({ weekStart, onWeekChange, weekInfo, warnin
     }
   }, [weekStart])
 
-  const handleDateChange = (date) => {
+  const handleDateChange = (date: Date | null) => {
     if (date) {
       setSelectedDate(date)
       const d = dayjs(date)

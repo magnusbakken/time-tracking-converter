@@ -93,6 +93,7 @@ npm run preview
 ## Tech Stack
 
 - **React 19** - UI framework
+- **TypeScript 5** - Type-safe JavaScript with strict mode enabled
 - **Vite** - Build tool and dev server
 - **Tailwind CSS 3** - Utility-first CSS framework
 - **Vitest** - Unit testing framework
@@ -100,3 +101,12 @@ npm run preview
 - **dayjs** - Date manipulation
 - **xlsx** - Excel file reading/writing
 - **react-datepicker** - Date picker component
+
+## TypeScript
+
+This project uses TypeScript with strict type checking enabled. All source files use `.ts` or `.tsx` extensions. Key TypeScript features:
+
+- **Strict Mode**: All strict compiler options are enabled for maximum type safety
+- **Type Definitions**: All functions have explicit parameter and return types
+- **Interfaces**: Component props and data structures use TypeScript interfaces
+- **Type Safety**: No use of `any` type - proper type guards are used instead

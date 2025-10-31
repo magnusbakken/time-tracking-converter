@@ -1,6 +1,6 @@
 import { HOURS_COLS, COMMENT_COLS, DYNAMICS_HEADERS } from '../utils/transformUtils'
 
-function escapeHtml(s) {
+function escapeHtml(s: string | number): string {
   return String(s)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -9,7 +9,19 @@ function escapeHtml(s) {
     .replaceAll("'", '&#039;')
 }
 
-function SimplifiedPreview({ rows }) {
+interface DynamicsRow {
+  LineNum: string
+  ProjectDataAreaId: string
+  ProjId: string
+  ACTIVITYNUMBER: string
+  [key: string]: string | number
+}
+
+interface SimplifiedPreviewProps {
+  rows: DynamicsRow[]
+}
+
+function SimplifiedPreview({ rows }: SimplifiedPreviewProps) {
   if (!rows.length) {
     return (
       <tbody>
@@ -76,7 +88,11 @@ function SimplifiedPreview({ rows }) {
   )
 }
 
-function RawPreview({ rows }) {
+interface RawPreviewProps {
+  rows: DynamicsRow[]
+}
+
+function RawPreview({ rows }: RawPreviewProps) {
   if (!rows.length) {
     return (
       <tbody>
@@ -107,13 +123,21 @@ function RawPreview({ rows }) {
   )
 }
 
+interface PreviewSectionProps {
+  rows: DynamicsRow[]
+  viewMode: 'simplified' | 'raw'
+  onViewModeChange: (mode: 'simplified' | 'raw') => void
+  onDownloadCsv: () => void
+  onDownloadXlsx: () => void
+}
+
 export default function PreviewSection({ 
   rows, 
   viewMode, 
   onViewModeChange, 
   onDownloadCsv, 
   onDownloadXlsx 
-}) {
+}: PreviewSectionProps) {
   const hasRows = rows && rows.length > 0
   
   return (

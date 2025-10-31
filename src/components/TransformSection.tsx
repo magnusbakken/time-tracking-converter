@@ -1,4 +1,9 @@
-export default function TransformSection({ onTransform, disabled }) {
+interface TransformSectionProps {
+  onTransform: () => void
+  disabled: boolean
+}
+
+export default function TransformSection({ onTransform, disabled }: TransformSectionProps) {
   return (
     <section className="bg-panel border border-border rounded-[10px] p-4 my-4">
       <h2 className="text-xl font-semibold mb-4">3) Transform</h2>

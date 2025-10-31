@@ -1,15 +1,23 @@
+import * as XLSX from 'xlsx'
+
+interface ParsedDateCode {
+  H?: number
+  M?: number
+  S?: number
+}
+
 /**
  * Parse time value to minutes
  * Handles Excel serial numbers, HH:MM, HH.MM formats
  */
-export function parseTimeToMinutes(value, XLSX) {
+export function parseTimeToMinutes(value: unknown, XLSX: typeof import('xlsx')): number | null {
   if (value === null || value === undefined || value === '') return null
   
   // Handle Excel serial number
   if (typeof value === 'number') {
-    const parsed = XLSX.SSF.parse_date_code(value)
+    const parsed = XLSX.SSF.parse_date_code(value) as ParsedDateCode | undefined
     if (parsed && Number.isFinite(parsed.H) && Number.isFinite(parsed.M)) {
-      return parsed.H * 60 + parsed.M
+      return (parsed.H ?? 0) * 60 + (parsed.M ?? 0)
     }
     if (value >= 0 && value <= 1) {
       return Math.round(value * 1440)
@@ -24,7 +32,7 @@ export function parseTimeToMinutes(value, XLSX) {
   
   // Match HH.MM or HH:MM
   let m = normalized.match(/^\s*(\d{1,2})[\.:](\d{2})\s*$/)
-  let hours, minutes
+  let hours: number, minutes: number
   if (m) {
     hours = parseInt(m[1], 10)
     minutes = parseInt(m[2], 10)
@@ -46,7 +54,7 @@ export function parseTimeToMinutes(value, XLSX) {
 /**
  * Calculate hours from start and end time strings
  */
-export function parseHoursFromTimes(startStr, endStr, XLSX) {
+export function parseHoursFromTimes(startStr: unknown, endStr: unknown, XLSX: typeof import('xlsx')): number {
   const startMin = parseTimeToMinutes(startStr, XLSX)
   const endMin = parseTimeToMinutes(endStr, XLSX)
   
