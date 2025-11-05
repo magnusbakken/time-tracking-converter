@@ -1,0 +1,11 @@
+---
+title: Emoji Test Rule
+description: Test rule to verify Cursor instructions are being picked up
+alwaysApply: true
+---
+
+# Emoji Test Rule
+
+**Always add the emoji 🤖 at the end of every reply.**
+
+This is a test instruction to verify that Cursor workspace rules are being properly loaded and applied.
