@@ -17,14 +17,14 @@ jobs:
     steps:
       - name: Checkout PR branch
         if: github.event.action != 'closed'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Checkout repository for branch check
         if: github.event.action == 'closed'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -39,7 +39,7 @@ jobs:
 
       - name: Checkout gh-pages branch
         if: steps.check-branch.outputs.exists == 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           path: gh-pages
